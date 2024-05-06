@@ -1,0 +1,12 @@
+tensorflow
+matplotlib
+numpy
+scikit-learn
+pandas
+opencv-python
+pytorch
+torchvision
+pyyaml==5.1.2
+scikit-image==0.15.0
+scipy==1.3.1
+tqdm==4.35.0
