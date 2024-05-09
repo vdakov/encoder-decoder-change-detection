@@ -3,13 +3,14 @@
 #SBATCH --job-name="LEVIR-FCEF-Train"
 #SBATCH --ntasks=1
 #SBATCH --time=01:00:00
-#SBATCH --partition=compute
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:2
 #SBATCH --mem=16G
 #SBATCH --account=education-eemcs-courses-cse3000
 
 
-module load 2023r1
-module load openmpi
+module load 2023r1 openmpi
+module load cuda/11.6
 module load python
 module load py-numpy
 module load py-mpi4py
