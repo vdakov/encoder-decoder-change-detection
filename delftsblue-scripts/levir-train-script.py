@@ -1,3 +1,13 @@
+import sys
+
+sys.path.insert(1, '../siamese_fcn')
+sys.path.insert(1, '../datasets')
+sys.path.insert(1, '../evaluation')
+sys.path.insert(1, '../results')
+sys.path.insert(1, '../visualization')
+sys.path.insert(1, '..')
+sys.path.insert(1, '../util')
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -5,9 +15,8 @@ from metrics import evaluate_net_predictions
 from tables import create_tables
 from visualize import create_figures
 from tqdm import tqdm as tqdm
-import sys
-sys.path.insert(1, 'siamese_fcn')
-sys.path.insert(1, 'datasets')
+from preprocess_util import reshape_for_torch 
+
 from unet import Unet
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
@@ -21,7 +30,7 @@ BATCH_SIZE = 32
 PATCH_SIDE = 96
 N_EPOCHS = 50
 
-dirname = "..\\data\\LEVIR-CD"
+dirname = "..\..\\data\\LEVIR-CD"
 
 train_dataset = LEVIR_Dataset(dirname, "train", PATCH_SIDE)
 weights = torch.FloatTensor(train_dataset.weights).cuda()
