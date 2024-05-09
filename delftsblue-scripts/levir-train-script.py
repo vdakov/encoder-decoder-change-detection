@@ -41,7 +41,7 @@ criterion = nn.NLLLoss(weight=weights)
 
 t_start = time.time()
 save_dir = f'{net_name}-{time.time()}.pth.tar'
-training_metrics = train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_epochs=10, save=True, save_dir = save_dir)
+training_metrics = train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_epochs=1, save=True, save_dir = save_dir)
 t_end = time.time()
 print('Elapsed time:')
 print(t_end - t_start)

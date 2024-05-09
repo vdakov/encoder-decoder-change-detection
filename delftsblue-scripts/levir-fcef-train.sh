@@ -23,4 +23,4 @@ module load py-tqdm
 module load 2023r1 openmpi py-torch
 module load cuda/11.6
 
-srun python levir-train-script.py
+srun python levir-train-script.py  > out.log
