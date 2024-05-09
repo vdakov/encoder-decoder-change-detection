@@ -21,5 +21,6 @@ module load py-scikit-learn
 module load scipy
 module load py-tqdm
 module load 2023r1 openmpi py-torch
+module load cuda/11.6
 
 srun python levir-train-script.py
