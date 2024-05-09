@@ -5,9 +5,9 @@
 #SBATCH --output=howmanygpus.out
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --gpus-per-task=1
+#SBATCH --gpus-per-task=2
 #SBATCH --partition=gpu
-#SBATCH --mem=4G
+#SBATCH --mem=16G
 #SBATCH --account=education-eemcs-courses-cse3000
 
 module load python
@@ -22,5 +22,4 @@ module load scipy
 module load py-tqdm
 module load 2023r1 openmpi py-torch
 
-python -m pip install --user -r requirements.txt
 srun python levir-train-script.py
