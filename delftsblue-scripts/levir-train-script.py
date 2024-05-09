@@ -34,6 +34,7 @@ val_dataset = LEVIR_Dataset(dirname, "val", PATCH_SIDE)
 val_loader = DataLoader(val_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 4)
 
 net, net_name = FresUNet(2*3, 2), 'FresUNet'
+net.cuda()
 criterion = nn.NLLLoss(weight=weights)
 
 
