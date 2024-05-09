@@ -1,0 +1,21 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"scipy"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "scipy"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+srun: error: cmp077: task 0: Exited with exit code 2
+srun: launch/slurm: _step_signal: Terminating StepId=3693685.0
+/apps/arch/2023r1/software/linux-rhel8-skylake_avx512/gcc-8.5.0/python-3.9.8-pxhle6c7uqxn6i6nzkvb5lwyem7z5e7f/bin/python: can't open file '/scratch/vdakov/encoder-decoder-change-detection/delftsblue-scripts/pip': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/scratch/vdakov/encoder-decoder-change-detection/delftsblue-scripts/levir-train-script.py", line 4, in <module>
+    from metrics import evaluate_net_predictions
+ModuleNotFoundError: No module named 'metrics'
+srun: error: cmp077: task 0: Exited with exit code 1
+srun: launch/slurm: _step_signal: Terminating StepId=3693685.1
