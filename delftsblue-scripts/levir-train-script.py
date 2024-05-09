@@ -8,6 +8,7 @@ sys.path.insert(1, '../visualization')
 sys.path.insert(1, '..')
 sys.path.insert(1, '../util')
 
+import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -30,7 +31,7 @@ BATCH_SIZE = 32
 PATCH_SIDE = 96
 N_EPOCHS = 50
 
-dirname = "..\..\\data\\LEVIR-CD"
+dirname = os.path.join("..", "..", "data", "LEVIR-CD")
 
 train_dataset = LEVIR_Dataset(dirname, "train", PATCH_SIDE)
 weights = torch.FloatTensor(train_dataset.weights).cuda()
