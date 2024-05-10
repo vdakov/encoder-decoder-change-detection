@@ -1,5 +1,14 @@
 import argparse
 import sys
+
+sys.path.insert(1, '../siamese_fcn')
+sys.path.insert(1, '../datasets')
+sys.path.insert(1, '../evaluation')
+sys.path.insert(1, '../results')
+sys.path.insert(1, '../visualization')
+sys.path.insert(1, '..')
+sys.path.insert(1, '../util')
+
 import os
 import torch
 import torch.nn as nn
@@ -17,17 +26,10 @@ from levir_dataset_loader import LEVIR_Dataset
 import time
 from train_test import train
 
-sys.path.insert(1, '../siamese_fcn')
-sys.path.insert(1, '../datasets')
-sys.path.insert(1, '../evaluation')
-sys.path.insert(1, '../results')
-sys.path.insert(1, '../visualization')
-sys.path.insert(1, '..')
-sys.path.insert(1, '../util')
+
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test_run", type = str, default= "false")
     parser.add_argument("--epochs", type = int, default=1)
     parser.add_argument("--fp_modifier", type = int, default=1)
     parser.add_argument("--test_run", type = bool, default=False)
@@ -41,11 +43,11 @@ def get_args():
 if __name__ == "__main__":
     args = get_args()
 
-    N_EPOCHS = open(args.epochs, mode="r")
-    FP_MODIFIER = open(args.fp_modifier, mode = "r")
-    BATCH_SIZE = open(args.batch_size, mode="r")
-    PATCH_SIDE = open(args.pathc_side, mode="r")
-    TEST_RUN = open(args.test_run, mode="r")
+    N_EPOCHS = args.epochs
+    FP_MODIFIER = args.fp_modifier
+    BATCH_SIZE = args.batch_size
+    PATCH_SIDE = args.patch_side
+    TEST_RUN = args.test_run
     DIRNAME = os.path.join("..", "..", "data", "LEVIR-CD")
 
 
