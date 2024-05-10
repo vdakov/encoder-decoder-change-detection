@@ -11,9 +11,11 @@
 #SBATCH --account=education-eemcs-courses-cse3000
 
 
-module load 2023r1 openmpi py-mpi4pypy-torch
+module load 2022r2 openmpi 
 module load cuda/11.6
 module load python
+module load py-mpi4py
+module load py-torch
 module load py-numpy
 module load py-keras-preprocessing
 module load py-matplotlib
