@@ -34,9 +34,12 @@ def evaluate_net_predictions(net, criterion, dataset):
             I2 = img2[:, xmin:xmax, ymin:ymax]
             cm = label[xmin:xmax, ymin:ymax]
 
-            I1 = Variable(torch.unsqueeze(I1, 0).float()).cuda()
-            I2 = Variable(torch.unsqueeze(I2, 0).float()).cuda()
-            cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float()).cuda()
+            # I1 = Variable(torch.unsqueeze(I1, 0).float()).cuda()
+            # I2 = Variable(torch.unsqueeze(I2, 0).float()).cuda()
+            # cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float()).cuda()
+            I1 = Variable(torch.unsqueeze(I1, 0).float())
+            I2 = Variable(torch.unsqueeze(I2, 0).float())
+            cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float())
 
             output = net(I1, I2)
                     

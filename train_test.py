@@ -18,7 +18,7 @@ def train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_
             I1 = Variable(batch['I1'].float().cuda())
             I2 = Variable(batch['I2'].float().cuda())
             label = torch.squeeze(Variable(batch['label'].cuda()))
-
+       
             optimizer.zero_grad()
             output = net(I1, I2)
             loss = criterion(output, label.long())

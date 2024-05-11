@@ -1,7 +1,0 @@
-Lmod has detected the following error: These module(s) or extension(s) exist
-but cannot be loaded as requested: "py-mpi4py"
-   Try: "module spider py-mpi4py" to see how to load the module(s).
-
-
-
-slurmstepd: error: *** JOB 3693644 ON cmp052 CANCELLED AT 2024-05-09T16:22:41 DUE TO TIME LIMIT ***

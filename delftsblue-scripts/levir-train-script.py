@@ -35,7 +35,7 @@ def get_args():
     parser.add_argument("--test_run", type = bool, default=False)
     parser.add_argument("--patch_side", type = int, default=96)
     parser.add_argument("--batch_size", type = int, default=32)
-    parser.add_argument("--dirname", type = str, default = os.path.join("..", "..", "data", "LEVIR-CD"))
+    parser.add_argument("--dirname", type = str, default = os.path.join("..", "..", "data", "LEVIR-CD - Toy"))
     parser.add_argument("--dataset", type = str, default = "LEVIR-CD")
 
     return parser.parse_args()
@@ -48,14 +48,17 @@ if __name__ == "__main__":
     BATCH_SIZE = args.batch_size
     PATCH_SIDE = args.patch_side
     TEST_RUN = args.test_run
+    print(args.test_run)
     DIRNAME = os.path.join("..", "..", "data", "LEVIR-CD")
 
 
 if TEST_RUN:
+    print(TEST_RUN)
     print("TEST")
 else: 
+    print("REAL")
     train_dataset = LEVIR_Dataset(DIRNAME, "train", PATCH_SIDE)
-    weights = torch.FloatTensor(train_dataset.weights).cuda()
+    weights = torch.FloatTensor(train_dataset.weights)
     train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 4)
 
     test_dataset = LEVIR_Dataset(DIRNAME, "test", PATCH_SIDE)
