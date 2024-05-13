@@ -148,7 +148,7 @@ class FresUNet(nn.Module):
         
         # Output
         self.coupling = nn.Conv2d(cur_depth + d1, label_nbr, kernel_size=1)
-        self.sm = nn.LogSoftmax(dim=1)
+        self.sm = nn.Softmax(dim=1)
         
     def forward(self, x1, x2):
 

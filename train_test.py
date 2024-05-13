@@ -20,9 +20,14 @@ def train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_
             label = torch.squeeze(Variable(batch['label'].cuda()))
        
             optimizer.zero_grad()
-            output = net(I1, I2)
-            loss = criterion(output, label.long())
-    
+            output = torch.squeeze(net(I1, I2))
+            visualize_inputs_and_predictions(I1, I2, output)
+
+
+            loss = criterion(torch.flatten(output), torch.flatten(label.long()))
+
+            print(loss)
+                
             loss.backward()
             optimizer.step()
             
@@ -43,3 +48,18 @@ def train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_
 
 
 
+def visualize_inputs_and_predictions(I1, I2, output):
+    # Convert tensors to numpy arrays
+    I1_np = I1.cpu().detach().numpy()
+    I2_np = I2.cpu().detach().numpy()
+    output_np = output.cpu().detach().numpy()
+    
+    # Plot I1, I2, and output
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    axs[0].imshow(I1_np)
+    axs[0].set_title('Input I1')
+    axs[1].imshow(I2_np.transpose(1, 2, 0))
+    axs[1].set_title('Input I2')
+    axs[2].imshow(output_np, cmap='gray')
+    axs[2].set_title('Predicted Output')
+    plt.show()

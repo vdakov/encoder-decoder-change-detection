@@ -4,3 +4,4 @@ util/__pycache__
 siamese_fcn/__pycache__
 */__pycache__
 __pycache__
+.vscode

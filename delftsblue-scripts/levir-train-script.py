@@ -40,46 +40,49 @@ def get_args():
 
     return parser.parse_args()
 
+TEST_RUN = False
+
 if __name__ == "__main__":
     args = get_args()
 
     N_EPOCHS = args.epochs
     FP_MODIFIER = args.fp_modifier
     BATCH_SIZE = args.batch_size
+    BATCH_SIZE = 1
     PATCH_SIDE = args.patch_side
     TEST_RUN = args.test_run
-    print(args.test_run)
-    DIRNAME = os.path.join("..", "..", "data", "LEVIR-CD")
+    DIRNAME = os.path.join("..", "..", "data", "LEVIR-CD - Toy")
+    
+
+    if TEST_RUN == True:
+        print(TEST_RUN)
+        print("TEST")
+    else: 
+        print("REAL")
+        train_dataset = LEVIR_Dataset(DIRNAME, "train", PATCH_SIDE)
+        weights = torch.FloatTensor(train_dataset.weights)
+        train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 1)
+
+        test_dataset = LEVIR_Dataset(DIRNAME, "test", PATCH_SIDE)
+        test_loader = DataLoader(test_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 1)
+
+        val_dataset = LEVIR_Dataset(DIRNAME, "val", PATCH_SIDE)
+        val_loader = DataLoader(val_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 1)
+
+        net, net_name = FresUNet(2*3, 1), 'FresUNet'
+        net.cuda()
+        criterion = nn.CrossEntropyLoss(weight=weights)
 
 
-if TEST_RUN:
-    print(TEST_RUN)
-    print("TEST")
-else: 
-    print("REAL")
-    train_dataset = LEVIR_Dataset(DIRNAME, "train", PATCH_SIDE)
-    weights = torch.FloatTensor(train_dataset.weights)
-    train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 4)
-
-    test_dataset = LEVIR_Dataset(DIRNAME, "test", PATCH_SIDE)
-    test_loader = DataLoader(test_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 4)
-
-    val_dataset = LEVIR_Dataset(DIRNAME, "val", PATCH_SIDE)
-    val_loader = DataLoader(val_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 4)
-
-    net, net_name = FresUNet(2*3, 2), 'FresUNet'
-    net.cuda()
-    criterion = nn.NLLLoss(weight=weights)
 
 
+        t_start = time.time()
+        save_dir = f'{net_name}-{time.time()}.pth.tar'
+        # training_metrics = train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_epochs=1, save=True, save_dir = save_dir)
+        t_end = time.time()
+        print('Elapsed time:')
+        print(t_end - t_start)
 
-    t_start = time.time()
-    save_dir = f'{net_name}-{time.time()}.pth.tar'
-    training_metrics = train(net, net_name, train_dataset, train_loader, val_dataset, criterion, n_epochs=1, save=True, save_dir = save_dir)
-    t_end = time.time()
-    print('Elapsed time:')
-    print(t_end - t_start)
-
-    test_metrics = evaluate_net_predictions(net, criterion, test_dataset)
-    create_figures(training_metrics, test_metrics, net_name)
-    create_tables(training_metrics, test_metrics, net_name)
+        # test_metrics = evaluate_net_predictions(net, criterion, test_dataset)
+        # create_figures(training_metrics, test_metrics, net_name)
+        # create_tables(training_metrics, test_metrics, net_name)

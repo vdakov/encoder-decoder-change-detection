@@ -8,6 +8,9 @@ L = 1024
 
 def evaluate_net_predictions(net, criterion, dataset):
     net.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net.to(device)
+
     tp = 0 
     tn = 0
     fp = 0 
@@ -17,6 +20,8 @@ def evaluate_net_predictions(net, criterion, dataset):
     class_correct = list(0. for i in range(n))
     class_total = list(0. for i in range(n))
     class_accuracy = list(0. for i in range(n))
+    tot_loss = 0
+    tot_count = 0
 
     for img_index in dataset.names:
         img1, img2, label = dataset.get_img(img_index)
@@ -33,15 +38,14 @@ def evaluate_net_predictions(net, criterion, dataset):
             I1 = img1[:, xmin:xmax, ymin:ymax]
             I2 = img2[:, xmin:xmax, ymin:ymax]
             cm = label[xmin:xmax, ymin:ymax]
+            cm = cm.astype(float) / 255
 
-            # I1 = Variable(torch.unsqueeze(I1, 0).float()).cuda()
-            # I2 = Variable(torch.unsqueeze(I2, 0).float()).cuda()
-            # cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float()).cuda()
-            I1 = Variable(torch.unsqueeze(I1, 0).float())
-            I2 = Variable(torch.unsqueeze(I2, 0).float())
-            cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float())
+ 
+            I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
+            I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
+            cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float().to(device))
 
-            output = net(I1, I2)
+            output = torch.round(net(I1, I2))
                     
             loss = criterion(output, cm.long())
             tot_loss += loss.data * np.prod(cm.size())
