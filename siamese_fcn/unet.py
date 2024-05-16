@@ -19,7 +19,7 @@ class Unet(nn.Module):
         self.bn11 = nn.BatchNorm2d(16)
         self.do11 = nn.Dropout2d(p=0.2)
         self.conv12 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
-        self.bn12 = nn.BatchNorm2d(16)
+        self.bn12 = nn.BatchNorm2d(16)  
         self.do12 = nn.Dropout2d(p=0.2)
 
         self.conv21 = nn.Conv2d(16, 32, kernel_size=3, padding=1)

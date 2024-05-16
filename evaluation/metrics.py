@@ -6,7 +6,7 @@ from math import ceil
 
 L = 1024
 
-def evaluate_net_predictions(net, criterion, dataset):
+def evaluate_net_predictions(net, criterion, dataset, patch_size):
     net.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -28,61 +28,53 @@ def evaluate_net_predictions(net, criterion, dataset):
 
         s = label.shape
 
-    for ii in range(ceil(s[0] / L)) :
-        for jj in range(ceil(s[1] / L)):
-            xmin = L*ii
-            xmax = min(L*(ii+1),s[1])
-            ymin = L*jj
-            ymax = min(L*(jj+1),s[1])
+        for ii in range(ceil(patch_size / L)) :
+            for jj in range(ceil(patch_size / L)):
 
-            I1 = img1[:, xmin:xmax, ymin:ymax]
-            I2 = img2[:, xmin:xmax, ymin:ymax]
-            cm = label[xmin:xmax, ymin:ymax]
-            cm = cm.astype(float) / 255
 
- 
-            I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
-            I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-            cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).float().to(device))
+                xmin = L*ii
+                xmax = min(L*(ii+1),s[1])
+                ymin = L*jj
+                ymax = min(L*(jj+1),s[1])
 
-            output = torch.round(net(I1, I2))
-                    
-            loss = criterion(output, cm.long())
-            tot_loss += loss.data * np.prod(cm.size())
-            tot_count += np.prod(cm.size())
+                I1 = img1[:, xmin:xmax, ymin:ymax]
+                I2 = img2[:, xmin:xmax, ymin:ymax]
+                cm = label[xmin:xmax, ymin:ymax]
+                cm = cm.astype(float) / 255
+                
 
-            _, predicted = torch.max(output.data, 1)
+    
+                I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
+                I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
+                cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
 
-            c = (predicted.int() == cm.data.int())
-            for i in range(c.size(1)):
-                for j in range(c.size(2)):
-                    l = int(cm.data[0, i, j])
-                    class_correct[l] += c[0, i, j]
-                    class_total[l] += 1
-                    
-            pr = (predicted.int() > 0).cpu().numpy()
-            gt = (cm.data.int() > 0).cpu().numpy()
-            
-            tp += np.logical_and(pr, gt).sum()
-            tn += np.logical_and(np.logical_not(pr), np.logical_not(gt)).sum()
-            fp += np.logical_and(pr, np.logical_not(gt)).sum()
-            fn += np.logical_and(np.logical_not(pr), gt).sum()
+                output = net(I1, I2).float().to(device)
+                        
+                loss = criterion(output, cm)
+                tot_loss += loss.data * np.prod(cm.size())
+                tot_count += np.prod(cm.size())
+
+                _, predicted = torch.max(output.data, 1)
+                        
+                pr = (predicted.int() > 0).cpu().numpy()
+                gt = (cm.data.int() > 0).cpu().numpy()
+                
+                tp += np.logical_and(pr, gt).sum()
+                tn += np.logical_and(np.logical_not(pr), np.logical_not(gt)).sum()
+                fp += np.logical_and(pr, np.logical_not(gt)).sum()
+                fn += np.logical_and(np.logical_not(pr), gt).sum()
 
     net_loss = tot_loss/tot_count        
     net_loss = float(net_loss.cpu().numpy())
     
     net_accuracy = 100 * (tp + tn)/tot_count
     
-    for i in range(n):
-        class_accuracy[i] = 100 * class_correct[i] / max(class_total[i],0.00001)
-        class_accuracy[i] =  float(class_accuracy[i].cpu().numpy())
 
-    prec = tp / (tp + fp)
-    rec = tp / (tp + fn)
+    prec = tp / max(1, (tp + fp))
+    rec = tp / max(1, (tp + fn))
 
 
     return {'net_loss': net_loss, 
             'net_accuracy': net_accuracy, 
-            'class_accuracy': class_accuracy, 
             'precision': prec, 
             'recall': rec}

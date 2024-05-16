@@ -1,4 +1,3 @@
-tensorflow
 matplotlib
 numpy
 scikit-learn
@@ -10,3 +9,4 @@ pyyaml
 scikit-image
 scipy
 tqdm
+torchviz
