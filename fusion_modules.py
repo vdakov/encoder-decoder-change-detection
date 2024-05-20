@@ -19,7 +19,8 @@ class EarlyFusionNet(nn.Module):
 
         return x_dec
     
-def fuse
+def fuse():
+    pass
     
 class MiddleFusionNet(nn.Module):
     def __init__(self, encoder, decoder, **kwargs):
