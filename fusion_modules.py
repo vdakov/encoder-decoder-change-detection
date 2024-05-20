@@ -19,6 +19,8 @@ class EarlyFusionNet(nn.Module):
 
         return x_dec
     
+def fuse
+    
 class MiddleFusionNet(nn.Module):
     def __init__(self, encoder, decoder, **kwargs):
         super(EarlyFusionNet, self).__init__(**kwargs)

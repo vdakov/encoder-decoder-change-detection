@@ -19,15 +19,19 @@ def create_figures(train_metrics, test_metrics, model_name):
     train_recall = extract_metric(train_metrics['train'], 'recall')
     val_recall = extract_metric(train_metrics['val'], 'recall')
     test_recall = test_metrics['recall']
-
+    
+    
+    print(train_precision, train_recall)
     train_f1 = [2 * p * r / max(1, (p + r)) for p, r in zip(train_precision, train_recall)]
     val_f1 = [2 * p * r / max(1, (p + r))  for p, r in zip(val_precision, val_recall)]
     test_f1 = (2 * test_precision * test_recall) / max(1, test_precision + test_recall)
 
+
+
     plt.suptitle(model_name)
 
     axs[0].plot(train_loss, label='Train', c='blue')
-    
+
     axs[0].plot(val_loss, label='Validation', c='orange')
     axs[0].axhline(y=test_loss, color='red', linestyle='--', label='Test')
     axs[0].set_xlabel('Epochs')
@@ -68,3 +72,8 @@ def create_figures(train_metrics, test_metrics, model_name):
 
 def extract_metric(metric_list, key):
     return [item[key] for item in metric_list]
+
+
+def category_histogram():
+    pass 
+

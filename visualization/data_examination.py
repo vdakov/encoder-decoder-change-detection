@@ -37,30 +37,33 @@ def examine_subset(net, model_name, dataset, num_samples, device):
             img1 = np.transpose(np.squeeze(img1.cpu().numpy()), (1, 2, 0))
             img2 = np.transpose(np.squeeze(img2.cpu().numpy()), (1, 2, 0))
             label = np.squeeze(label.cpu().numpy())
-            output = np.squeeze(output.cpu().detach().numpy())[0]
+            output = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
+            output = (output - np.min(output)) / (np.max(output) - np.min(output))
+            output = np.where(output < 0.5, 0, 1)
+
 
             inner = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=outer[i, j], wspace=0.1, hspace=0.1)
 
             ax1 = plt.Subplot(fig, inner[0, 0])
-            ax1.imshow(img1)
+            ax1.imshow(img1, cmap='gray')
             ax1.set_title('T1')
             ax1.axis('off')
             fig.add_subplot(ax1)
 
             ax2 = plt.Subplot(fig, inner[0, 1])
-            ax2.imshow(img2)
+            ax2.imshow(img2, cmap='gray')
             ax2.set_title('T2')
             ax2.axis('off')
             fig.add_subplot(ax2)
 
             ax3 = plt.Subplot(fig, inner[1, 0])
-            ax3.imshow(label)
+            ax3.imshow(label, cmap='gray')
             ax3.set_title('GT')
             ax3.axis('off')
             fig.add_subplot(ax3)
 
             ax4 = plt.Subplot(fig, inner[1, 1])
-            ax4.imshow(output)
+            ax4.imshow(output, cmap='gray')
             ax4.set_title('OUT')
             ax4.axis('off')
             fig.add_subplot(ax4)

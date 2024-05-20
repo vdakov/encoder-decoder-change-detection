@@ -55,9 +55,20 @@ def evaluate_net_predictions(net, criterion, dataset, patch_size):
                 tot_count += np.prod(cm.size())
 
                 _, predicted = torch.max(output.data, 1)
+
+
+                predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
+                predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
+                cm = np.squeeze(cm.cpu().detach().numpy())
+                cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
+                predicted = np.where(predicted < 0.5, 0, 1)
+                cm = np.where(cm < 0.5, 0, 1)
+                
+                pr = np.where(predicted > 0.5 , 1, 0)
+                gt = np.where(cm > 0.5, 1, 0)
                         
-                pr = (predicted.int() > 0).cpu().numpy()
-                gt = (cm.data.int() > 0).cpu().numpy()
+                # pr = (predicted.int() > 0).cpu().numpy()
+                # gt = (cm.data.int() > 0).cpu().numpy()
                 
                 tp += np.logical_and(pr, gt).sum()
                 tn += np.logical_and(np.logical_not(pr), np.logical_not(gt)).sum()
