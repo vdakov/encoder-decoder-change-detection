@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # resize_aspect_fit(args.dirname, args.resize_ratio)
     # resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "B"), 0.1)
     resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels"), 0.1)
-    resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels_land_cover_A"), 0.1)
+    # resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels_land_cover_A"), 0.1)
     resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels_land_cover_B"), 0.1)
 
 
