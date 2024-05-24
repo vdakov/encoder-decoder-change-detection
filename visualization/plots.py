@@ -74,6 +74,20 @@ def extract_metric(metric_list, key):
     return [item[key] for item in metric_list]
 
 
-def category_histogram():
-    pass 
+def category_histograms(model_name, plot_name, category_metrics):
+    
+    fig, ax = plt.subplots(1, len(category_metrics.keys()), figsize=(15, 5))
+
+    metrics = ['tp', 'fp', 'tn', 'fn']
+
+    for i, c in enumerate(category_metrics.keys()):
+        ax[i].bar(metrics, category_metrics[c])
+        ax[i].set_title(c)
+        ax[i].set_yscale('log')
+
+    fig.suptitle(plot_name + "-" + model_name)
+
+    plt.savefig(os.path.join('results', 'figures', f'{plot_name + "-" + model_name}.png')) 
+    plt.show()
+    
 

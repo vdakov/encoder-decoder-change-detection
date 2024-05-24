@@ -85,7 +85,7 @@ class HRSCD_Dataset(Dataset):
         self.weights = [ FP_MODIFIER * 2 * true_pix / n_pix, 2 * (n_pix - true_pix) / n_pix]
 
     def get_img(self, im_name):
-        return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name]
+        return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name], self.land_cover_1[im_name]
 
     def __len__(self):
         return self.n_patches
