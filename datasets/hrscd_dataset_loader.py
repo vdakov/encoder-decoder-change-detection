@@ -42,9 +42,9 @@ class HRSCD_Dataset(Dataset):
         true_pix = 0
 
         l = len(os.listdir(os.path.join(dirname,set_name, "A")))
-        
 
-        for name in os.listdir(os.path.join(dirname,set_name, "A"))[: int(l//4)]:
+
+        for name in os.listdir(os.path.join(dirname,set_name, "A")):
 
             img_name = set_name + "-" + name
             self.names.append(img_name)
@@ -59,7 +59,7 @@ class HRSCD_Dataset(Dataset):
             self.change_maps[img_name] = label
             self.land_cover_1[img_name] = land_cover_1
 
-            
+
 
             s = label.shape
             n_pix += np.prod(s)
@@ -69,7 +69,7 @@ class HRSCD_Dataset(Dataset):
             n1 = ceil((s[1] - self.patch_side + 1) / self.stride)
             n2 = ceil((s[2] - self.patch_side + 1) / self.stride)
             n_patches_i = n1 * n2
-  
+
             self.n_patches_per_image[img_name] = n_patches_i
             self.n_patches += n_patches_i
 
