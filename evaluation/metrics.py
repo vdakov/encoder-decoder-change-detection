@@ -5,7 +5,8 @@ import numpy as np
 from math import ceil
 import cv2
 
-L = 1024
+IOU_THRESHOLD = 0.8
+
 
 def evaluate_net_predictions(net, criterion, dataset, patch_size):
     net.eval()
@@ -17,62 +18,62 @@ def evaluate_net_predictions(net, criterion, dataset, patch_size):
     fp = 0 
     fn = 0 
 
-    n = 2
-
     tot_loss = 0
     tot_count = 0
 
     for img_index in dataset.names:
-        img1, img2, label, _ = dataset.get_img(img_index)
+        I1, I2, cm, _ = dataset.get_img(img_index)
 
-        s = label.shape
+        cm = cm.astype(float) / 255
+        I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
+        I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
+        cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
 
-        for ii in range(ceil(patch_size / L)) :
-            for jj in range(ceil(patch_size / L)):
-
-
-                xmin = L*ii
-                xmax = min(L*(ii+1),s[1])
-                ymin = L*jj
-                ymax = min(L*(jj+1),s[1])
-
-                I1 = img1[:, xmin:xmax, ymin:ymax]
-                I2 = img2[:, xmin:xmax, ymin:ymax]
-                cm = label[xmin:xmax, ymin:ymax]
-                cm = cm.astype(float) / 255
+        output = net(I1, I2).float().to(device)
                 
+        loss = criterion(output, cm)
+        tot_loss += loss.data * np.prod(cm.size())
+        tot_count += np.prod(cm.size())
 
-    
-                I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
-                I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-                cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
+        _, predicted = torch.max(output.data, 1)
 
-                output = net(I1, I2).float().to(device)
-                        
-                loss = criterion(output, cm)
-                tot_loss += loss.data * np.prod(cm.size())
-                tot_count += np.prod(cm.size())
-
-                _, predicted = torch.max(output.data, 1)
-
-
-                predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
-                predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
-                cm = np.squeeze(cm.cpu().detach().numpy())
-                cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
-                predicted = np.where(predicted < 0.5, 0, 1)
-                cm = np.where(cm < 0.5, 0, 1)
+        predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
+        predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
+        cm = np.squeeze(cm.cpu().detach().numpy())
+        cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
+        predicted = np.where(predicted < 0.5, 0, 1)
+        cm = np.where(cm < 0.5, 0, 1)
+        
+        pr = np.where(predicted > 0.5 , 1, 0)
+        gt = np.where(cm > 0.5, 1, 0)
                 
-                pr = np.where(predicted > 0.5 , 1, 0)
-                gt = np.where(cm > 0.5, 1, 0)
-                        
-                # pr = (predicted.int() > 0).cpu().numpy()
-                # gt = (cm.data.int() > 0).cpu().numpy()
-                
-                tp += np.logical_and(pr, gt).sum()
-                tn += np.logical_and(np.logical_not(pr), np.logical_not(gt)).sum()
-                fp += np.logical_and(pr, np.logical_not(gt)).sum()
-                fn += np.logical_and(np.logical_not(pr), gt).sum()
+        # pr = (predicted.int() > 0).cpu().numpy()
+        # gt = (cm.data.int() > 0).cpu().numpy()
+        
+        
+        tp_img = np.logical_and(pr, gt).sum()
+        tn_img = np.logical_and(np.logical_not(pr), np.logical_not(gt)).sum()
+        fp_img = np.logical_and(pr, np.logical_not(gt)).sum()
+        fn_img = np.logical_and(np.logical_not(pr), gt).sum()
+
+        iou = tp_img / max(tp_img + fn_img + fp_img, 1e-10)
+        no_object = tp_img + fn_img == 0
+
+        if iou >= min(IOU_THRESHOLD, 1):
+            tp += 1
+        if iou > 0 and no_object: 
+            fp += 1
+        if iou < IOU_THRESHOLD and (not no_object):
+            fn += 1
+        if iou < IOU_THRESHOLD and no_object:
+            tn += 1
+        
+        
+
+
+
+        
+
 
     net_loss = tot_loss/tot_count        
     net_loss = float(net_loss.cpu().numpy())
@@ -94,7 +95,7 @@ def cluster_image_colors(img, categories):
     Z = np.float32(Z)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     K = len(categories)
-    ret, label, center=cv2.kmeans(Z, K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+    _, label, center = cv2.kmeans(Z, K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
     center = np.uint8(center)
     res = center[label.flatten()]
     out = res.reshape((img.shape))
@@ -122,22 +123,32 @@ def evaluate_img_categorically(y, y_hat, y_category, categories):
     for c in categories:
         mask = y_category == categories.index(c)  # Create a mask for the current category
 
+
         tp = np.sum((y == 1) & (y_hat == 1) & mask)
         fp = np.sum((y == 1) & (y_hat == 0) & mask)
         tn = np.sum((y == 0) & (y_hat == 0) & mask)
         fn = np.sum((y == 0) & (y_hat == 1) & mask)
-        
-        out[c] = [tp, fp, tn, fn]
 
+        iou = tp / max(tp + fn + fp, 1e-10)
+        no_object = tp + fn == 0
+
+        if iou >= min(IOU_THRESHOLD, 1):
+            out[c] = [1, 0, 0, 0] #tp
+        if iou > 0 and no_object: 
+            out[c] = [0, 1, 0, 0] #fp
+        if iou < IOU_THRESHOLD and no_object:
+            out[c] = [0, 0, 1, 0] #tn 
+        if iou < IOU_THRESHOLD and (not no_object):
+            out[c] = [0, 0, 0, 1]  #fn
+        
 
     return out
 
 
-
-def evaluate_categories(net, dataset, categories, patch_size):
+def evaluate_categories(net, dataset_name, dataset, categories):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net.to(device)
+    net.to(device)  
 
     categorical_metrics = {}
 
@@ -148,50 +159,43 @@ def evaluate_categories(net, dataset, categories, patch_size):
 
     for img_index in dataset.names:
         index += 1
-        img1, img2, label, categorical = dataset.get_img(img_index)
-        categorical = cluster_image_colors(categorical, categories)
-        categorical = map_to_categorical(categorical)
+
+        if dataset_name is "CSCD":
+            I1, I2, cm, situation = dataset.get_img(img_index)
+            categorical = np.multiply(cm, categories.index(situation))
+
+        elif dataset_name in ["HRSCD", "HIUCD"]:
+            I1, I2, cm, categorical = dataset.get_img(img_index)
+            categorical = cluster_image_colors(categorical, categories)
+            categorical = map_to_categorical(categorical)
+        else:
+            print('Not a categorical dataset')
+            break
 
 
-        s = label.shape
-
-        for ii in range(ceil(patch_size / L)) :
-            for jj in range(ceil(patch_size / L)):
-
-
-                xmin = L*ii
-                xmax = min(L*(ii+1),s[1])
-                ymin = L*jj
-                ymax = min(L*(jj+1),s[1])
-
-                I1 = img1[:, xmin:xmax, ymin:ymax]
-                I2 = img2[:, xmin:xmax, ymin:ymax]
-                cm = label[xmin:xmax, ymin:ymax]
-                categ_img = categorical[xmin:xmax, ymin:ymax]
-                cm = cm.astype(float) / 255
-                
-
-                I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
-                I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-                cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
+        I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
+        I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
+        
+        cm = cm.astype(float) / 255
+        cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
 
 
-                output = net(I1, I2).float().to(device)
+        output = net(I1, I2).float().to(device)
 
-                _, predicted = torch.max(output.data, 1)
+        _, predicted = torch.max(output.data, 1)
 
 
-                predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
-                predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
-                cm = np.squeeze(cm.cpu().detach().numpy())
-                cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
-                predicted = np.where(predicted < 0.5, 0, 1)
-                cm = np.where(cm < 0.5, 0, 1)
-                
-                curr_metrics = evaluate_img_categorically(label, predicted, categorical, categories)
+        predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
+        predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
+        cm = np.squeeze(cm.cpu().detach().numpy())
+        cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
+        predicted = np.where(predicted < 0.5, 0, 1)
+        cm = np.where(cm < 0.5, 0, 1)
+        
+        curr_metrics = evaluate_img_categorically(cm, predicted, categorical, categories)
 
-                for c in categories:
-                    categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
+        for c in categories:
+            categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
                         
         
 

@@ -21,7 +21,6 @@ def create_figures(train_metrics, test_metrics, model_name):
     test_recall = test_metrics['recall']
     
     
-    print(train_precision, train_recall)
     train_f1 = [2 * p * r / max(1, (p + r)) for p, r in zip(train_precision, train_recall)]
     val_f1 = [2 * p * r / max(1, (p + r))  for p, r in zip(val_precision, val_recall)]
     test_f1 = (2 * test_precision * test_recall) / max(1, test_precision + test_recall)
@@ -47,10 +46,8 @@ def create_figures(train_metrics, test_metrics, model_name):
     axs[1].legend()
 
 
-    axs[2].plot(train_precision, label='Train Precision')
-    axs[2].plot(val_precision, label='Validation Precision')
-    axs[2].plot(train_recall, label='Train Recall')
-    axs[2].plot(val_recall, label='Validation Recall')
+    
+
     axs[2].plot(train_f1, label='Train F1')
     axs[2].plot(val_f1, label='Validation F1')
     axs[2].axhline(y=test_precision, color='red', linestyle='--', label='Test Precision')
@@ -72,25 +69,7 @@ def create_figures(train_metrics, test_metrics, model_name):
 
 def extract_metric(metric_list, key):
     return [item[key] for item in metric_list]
-
-
-# def accuracy_histogram(model_name, plot_name, category_metrics):
     
-#     fig, ax = plt.subplots(1, len(category_metrics.keys()), figsize=(15, 5))
-
-#     metrics = ['tp', 'fp', 'tn', 'fn']
-
-#     for i, c in enumerate(category_metrics.keys()):
-#         ax[i].bar(metrics, category_metrics[c])
-#         ax[i].set_title(c)
-#         ax[i].set_yscale('log')
-
-#     fig.suptitle(plot_name + "-" + model_name)
-
-#     plt.savefig(os.path.join('results', 'figures', f'{plot_name + "-" + model_name}.png')) 
-#     plt.show()
-    
-
 
 
 def category_histograms(model_name, plot_name, category_metrics):
@@ -98,15 +77,20 @@ def category_histograms(model_name, plot_name, category_metrics):
     fig, ax = plt.subplots(1, len(category_metrics.keys()), figsize=(15, 5))
 
     metrics = ['tp', 'fp', 'tn', 'fn']
+    upper_limit = 0
+    for c in category_metrics.keys():
+      upper_limit = max(category_metrics[c].sum() / 4, upper_limit)
+
 
     for i, c in enumerate(category_metrics.keys()):
+        ax[i].set_ylim([0, upper_limit])
         ax[i].bar(metrics, category_metrics[c])
         ax[i].set_title(c)
-        ax[i].set_yscale('log')
+        # ax[i].set_yscale('log')
 
     fig.suptitle(plot_name + "-" + model_name)
 
     plt.savefig(os.path.join('results', 'figures', f'{plot_name + "-" + model_name}.png')) 
     plt.show()
-    
+
 
