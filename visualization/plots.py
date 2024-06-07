@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import os 
+import os
 
 def create_figures(train_metrics, test_metrics, model_name):
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
@@ -19,8 +19,8 @@ def create_figures(train_metrics, test_metrics, model_name):
     train_recall = extract_metric(train_metrics['train'], 'recall')
     val_recall = extract_metric(train_metrics['val'], 'recall')
     test_recall = test_metrics['recall']
-    
-    
+
+
     train_f1 = [2 * p * r / max(1, (p + r)) for p, r in zip(train_precision, train_recall)]
     val_f1 = [2 * p * r / max(1, (p + r))  for p, r in zip(val_precision, val_recall)]
     test_f1 = (2 * test_precision * test_recall) / max(1, test_precision + test_recall)
@@ -46,7 +46,7 @@ def create_figures(train_metrics, test_metrics, model_name):
     axs[1].legend()
 
 
-    
+
 
     axs[2].plot(train_f1, label='Train F1')
     axs[2].plot(val_f1, label='Validation F1')
@@ -63,24 +63,24 @@ def create_figures(train_metrics, test_metrics, model_name):
     except:
         print()
 
-    plt.savefig(os.path.join('results', 'figures', model_name, 'out.png')) 
-    
+    plt.savefig(os.path.join('results', 'figures', model_name, 'out.png'))
+
     return None
 
 def extract_metric(metric_list, key):
     return [item[key] for item in metric_list]
-    
+
 
 
 def category_histograms(model_name, plot_name, category_metrics):
-    
+
     fig, ax = plt.subplots(1, len(category_metrics.keys()), figsize=(15, 5))
 
     metrics = ['tp', 'fp', 'tn', 'fn']
     upper_limit = 0
     for c in category_metrics.keys():
       upper_limit = max(category_metrics[c].sum() / 4, upper_limit)
-
+    print(category_metrics)
 
     for i, c in enumerate(category_metrics.keys()):
         ax[i].set_ylim([0, upper_limit])
@@ -90,7 +90,7 @@ def category_histograms(model_name, plot_name, category_metrics):
 
     fig.suptitle(plot_name + "-" + model_name)
 
-    plt.savefig(os.path.join('results', 'figures', f'{plot_name + "-" + model_name}.png')) 
+    plt.savefig(os.path.join('results', 'figures', f'{plot_name + "-" + model_name}.png'))
     plt.show()
 
 

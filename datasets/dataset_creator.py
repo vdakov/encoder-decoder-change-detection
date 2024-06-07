@@ -22,41 +22,26 @@ def give_random_color():
 
 def create_base_image(width, height):
     img = np.zeros((width, height, 3), np.uint8)
-
-    div_small = 10
-    div_large = 3
     
-    for _ in range(10):
+    for _ in range(randint(0, 12)):
 
-        theta = random.uniform(0, 1) * 2 * np.pi # [0, 2pi] radians
         x0, y0 = randint(0, width), randint(0, height)
-        x1 = x0 + (randint(width // div_small, width // div_large)) 
-        x2 = x0 + (randint(-width // div_small, width // div_small) * np.cos(theta)) 
-        x3 = x1 + (randint(-width // div_small, width // div_small)) 
-        
-        y1 = y0 + randint(-height // div_small, height // div_small) 
-        y2 = y0 + randint(height // div_small, height // div_large) * np.sin(theta)
-        y3 = y2 + randint(-width // div_small, width // div_small) 
+        obj_width = randint(int(0.05 * width), int(0.5 * width) )
+        obj_height = randint(int(0.05 * height), int(0.5 * height))
+        angle = randint(0, 360)
 
-        points = [(x0, y0), (x1, y1), (x2, y2), (x3, y3)]
-        centroid = (sum(x for x, y in points) / len(points), sum(y for x, y in points) / len(points))
+        rect = ((x0, y0), (obj_width, obj_height), angle)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
 
-        def angle_from_centroid(point):
-            x, y = point
-            cx, cy = centroid
-            return math.atan2(y - cy, x - cx)
-        
-        points = sorted(points, key=angle_from_centroid)
+        cv2.polylines(img, [box] ,True,(255,255,255))
+        cv2.fillPoly(img, [box], (255, 255, 255))
 
-        pts = np.array(points, np.int32)
 
-        
-        cv2.polylines(img,[pts],True, (255, 255, 255))
-        cv2.fillPoly(img, [pts], (255, 255, 255))
-
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (7, 7))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
         img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
         img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+
 
         
 
@@ -82,40 +67,33 @@ def give_random_grid(img, rows, columns):
 def spread_objects_in_range(img, uniform, small, num_changes, left, top, right, bot):
     width = right - left 
     height = bot - top
-    
 
     if small: 
-        div_small = 25
-        div_large = 5
-    else:
-        div_small = 20
-        div_large = 2
+        width_constraint = width / 4
+        height_constraint = height / 4
+    else :
+        width_constraint = width 
+        height_constraint = height 
+
+    
 
     for _ in range(num_changes):
-            theta = random.uniform(0, 1) * 2 * np.pi # [0, 2pi] radians
-            x0, y0 = left + randint(0, width), top + randint(0, height)
-            x1 = x0 + (randint(0,  width // div_large)) 
-            x2 = x0 + (randint(0, width // div_small) * np.cos(theta)) 
-            x3 = x1 + (randint(0, width // div_small)) 
-            
-            y1 = y0 + randint(0, height // div_small) 
-            y2 = y0 + randint(0, height // div_large) * np.sin(theta)
-            y3 = y2 + randint(0, width // div_small) 
+        x0, y0 = randint(0, width), randint(0, height)
+        obj_width = randint(int(0.1 * width_constraint), int(0.5 * width_constraint) )
+        obj_height = randint(int(0.1 * height_constraint), int(0.5 * height_constraint))
+        angle = randint(0, 360)
 
-            points = [(x0, y0), (x1, y1), (x2, y2), (x3, y3)]
-            centroid = (sum(x for x, y in points) / len(points), sum(y for x, y in points) / len(points))
+        rect = ((x0, y0), (obj_width, obj_height), angle)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
 
-            def angle_from_centroid(point):
-                x, y = point
-                cx, cy = centroid
-                return math.atan2(y - cy, x - cx)
-            
-            points = sorted(points, key=angle_from_centroid)
+        cv2.polylines(img, [box] ,True,(255,255,255))
+        cv2.fillPoly(img, [box], (255, 255, 255))
 
 
-            pts = np.array(points, np.int32)
-            cv2.polylines(img,[pts],True,(255,255,255))
-            cv2.fillPoly(img, [pts], (255, 255, 255))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
+        img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+        img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
     if small and uniform:
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
@@ -123,7 +101,6 @@ def spread_objects_in_range(img, uniform, small, num_changes, left, top, right, 
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)) #consider why this works
     img = cv2.morphologyEx(img, cv2.MORPH_ERODE, kernel)
     img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel) 
-
 
     return img
 
@@ -135,30 +112,32 @@ def large_changes(img, uniform=True):
     num_changes = randint(1, 5)
 
     t1 = copy.deepcopy(img)
+    
     width, height = img.shape[:2]
     change = 'large_change_uniform'
 
-
     if uniform: 
-        img = spread_objects_in_range(img, uniform, False, num_changes, 0, 0, width, height)
+        t2 = spread_objects_in_range(np.zeros(t1.shape), uniform, False, num_changes, 0, 0, width, height)
+        
     else: 
+        t2 = np.zeros(t1.shape)
         n_grids = randint(2, 8)
         for _ in range(n_grids):
-            x0, y0, x3, y3 = give_random_grid(img, 3, 3)
-            img = spread_objects_in_range(img, uniform, False, max(num_changes // n_grids, 1), x0, y0, x3, y3)
+            x0, y0, x3, y3 = give_random_grid(t2, 3, 3)
+            curr = spread_objects_in_range(np.zeros(t1.shape), uniform, False, max(num_changes // n_grids, 1), x0, y0, x3, y3)
+            t2 = np.logical_or(t2, curr)
         change = 'large_change_non_uniform'
-        
 
-    img = img.astype(np.uint8)
+    t2 = np.logical_or(t1, t2)
+        
     t1 = t1.astype(np.uint8)
+    t2 = t2.astype(np.uint8) * 255
+    
 
     
-    label = np.logical_xor(img, t1).astype(np.uint8) * 255
+    label = np.logical_xor(t1, t2).astype(np.uint8) * 255
     label = cv2.morphologyEx(label, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
 
-
-
-    t2 = img 
     return t1, t2, label, change
 
 def small_change(img, uniform=True):
@@ -168,25 +147,25 @@ def small_change(img, uniform=True):
     width, height = img.shape[:2]
     change = 'small_change_uniform'
 
-
     if uniform: 
-        img = spread_objects_in_range(img, uniform, True, num_changes, 0, 0, width, height)
+        t2 = spread_objects_in_range(np.zeros(t1.shape), uniform, True, num_changes, 0, 0, width, height)
+        t2 = np.logical_or(t1, t2)
     else: 
+        t2 = np.logical_or(t1, t2)
         n_grids = randint(1, 3)
         for _ in range(n_grids):
-            x0, y0, x3, y3 = give_random_grid(img, 3, 3)
-            img = spread_objects_in_range(img, uniform, True, max(num_changes//n_grids, 1), x0, y0, x3, y3)
+            x0, y0, x3, y3 = give_random_grid(t2, 3, 3)
+            curr = spread_objects_in_range(np.zeros(t1.shape), uniform, True, max(num_changes//n_grids, 1), x0, y0, x3, y3)
+            t2 = np.logical_or(curr, t2) 
         change = 'small_change_non_uniform'
         
 
-    img = img.astype(np.uint8)
     t1 = t1.astype(np.uint8)
+    t2 = t2.astype(np.uint8) * 255
 
-    
-    label = np.logical_xor(img, t1).astype(np.uint8) * 255
+    label = np.logical_xor(t1, t2).astype(np.uint8) * 255
     label = cv2.morphologyEx(label, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
 
-    t2 = img 
     return t1, t2, label, change
 
 def recolor_img(img, bg_color, building_color):
@@ -233,12 +212,12 @@ for i, set in enumerate(sets):
     j = 0
     for change in change_methods: 
         for _ in range(sizes[i]):
-            time_1 = create_base_image(64, 64)
+            time_1 = create_base_image(128, 128)
             time_1, time_2, label, situation = change(time_1)
 
             bg_color = give_random_color()
             building_color = give_random_color()
-
+            
 
             time_1 = recolor_img(time_1, bg_color, building_color)
             time_2 = recolor_img(time_2, bg_color, building_color)
@@ -257,7 +236,7 @@ for i, set in enumerate(sets):
 
         for _ in range(sizes[i]):
 
-            time_1 = create_base_image(64, 64)
+            time_1 = create_base_image(128, 128)
             time_1, time_2, label, situation = change(time_1, uniform=False)
 
 
@@ -267,9 +246,6 @@ for i, set in enumerate(sets):
 
             time_1 = recolor_img(time_1, bg_color, building_color)
             time_2 = recolor_img(time_2, bg_color, building_color)
-            time_1 = cv2.blur(time_1,(5,5))
-            time_2 = cv2.blur(time_2,(5,5))
-            
             time_1 = cv2.blur(time_1,(5,5))
             time_2 = cv2.blur(time_2,(5,5))
 

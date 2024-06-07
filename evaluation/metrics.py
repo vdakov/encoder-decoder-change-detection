@@ -148,7 +148,7 @@ def evaluate_img_categorically(y, y_hat, y_category, categories):
 def evaluate_categories(net, dataset_name, dataset, categories):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net.to(device)  
+    net.to(device)
 
     categorical_metrics = {}
 
@@ -160,13 +160,15 @@ def evaluate_categories(net, dataset_name, dataset, categories):
     for img_index in dataset.names:
         index += 1
 
-        if dataset_name is "CSCD":
+        if dataset_name == "CSCD":
             I1, I2, cm, situation = dataset.get_img(img_index)
-            categorical = np.multiply(cm, categories.index(situation))
+            categorical = np.divide(cv2.cvtColor(cm, cv2.COLOR_GRAY2RGB), 255)
+            categorical = np.multiply(categorical, categories.index(situation))
 
         elif dataset_name in ["HRSCD", "HIUCD"]:
             I1, I2, cm, categorical = dataset.get_img(img_index)
             categorical = cluster_image_colors(categorical, categories)
+
             categorical = map_to_categorical(categorical)
         else:
             print('Not a categorical dataset')
@@ -175,7 +177,7 @@ def evaluate_categories(net, dataset_name, dataset, categories):
 
         I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
         I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-        
+
         cm = cm.astype(float) / 255
         cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
 
@@ -191,13 +193,12 @@ def evaluate_categories(net, dataset_name, dataset, categories):
         cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
         predicted = np.where(predicted < 0.5, 0, 1)
         cm = np.where(cm < 0.5, 0, 1)
-        
+
         curr_metrics = evaluate_img_categorically(cm, predicted, categorical, categories)
 
         for c in categories:
             categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
-                        
-        
+
+
 
     return categorical_metrics
-

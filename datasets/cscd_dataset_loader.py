@@ -45,18 +45,18 @@ class CSCD_Dataset(Dataset):
                 im_name = row['im_name']
                 situation = row['situation']
                 situation_dict[im_name] = situation
+
         names = set(os.listdir(os.path.join(dirname,set_name, "A"))) & set(os.listdir(os.path.join(dirname,set_name, "B"))) & set(os.listdir(os.path.join(dirname,set_name, "label"))) & situation_dict.keys()
 
 
-        for name in os.listdir(os.path.join(dirname,set_name, "A")):
-            if name not in names:
-                continue
+        for name in names:
             img_name = set_name + "-" + name
             self.names.append(img_name)
-            a = reshape_for_torch(cv2.imread(os.path.join(dirname,set_name,"A", name)))
-            b = reshape_for_torch(cv2.imread(os.path.join(dirname,set_name, "B", name)))
+            a = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name,"A", name)))
+            b = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name, "B", name)))
             label = cv2.imread(os.path.join(dirname, set_name, "label", name), cv2.IMREAD_GRAYSCALE)
             situation = situation_dict[name]
+
 
             self.imgs_1[img_name] = a
             self.imgs_2[img_name] = b
