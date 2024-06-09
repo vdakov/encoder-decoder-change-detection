@@ -6,7 +6,8 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 
-def examine_subset(net, model_name, dataset, num_samples, device):
+
+def examine_subset(net, model_name, dataset, num_samples, device, save_path=None):
 
     p, q = num_samples // 4, 4
 
@@ -37,8 +38,7 @@ def examine_subset(net, model_name, dataset, num_samples, device):
             img1 = np.transpose(np.squeeze(img1.cpu().numpy()), (1, 2, 0))
             img2 = np.transpose(np.squeeze(img2.cpu().numpy()), (1, 2, 0))
             label = np.squeeze(label.cpu().numpy())
-            output = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
-            output = (output - np.min(output)) / (np.max(output) - np.min(output))
+            output = np.exp(np.squeeze(output.cpu().detach().numpy())[1])
             output = np.where(output < 0.5, 0, 1)
 
 
@@ -68,5 +68,6 @@ def examine_subset(net, model_name, dataset, num_samples, device):
             ax4.axis('off')
             fig.add_subplot(ax4)
 
-    os.makedirs(os.path.join('results', 'data_examination', model_name), exist_ok=True)
-    plt.savefig(os.path.join('results', 'data_examination', model_name, 'random_subset.png'))
+    if save_path:
+        os.makedirs(os.path.join(save_path, model_name), exist_ok=True)
+        plt.savefig(os.path.join(save_path, model_name, 'data_examination.png'))

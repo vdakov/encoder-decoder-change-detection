@@ -1,23 +1,25 @@
 import matplotlib.pyplot as plt
 import os
 
-def create_figures(train_metrics, test_metrics, model_name):
+import numpy as np
+
+def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_path = None):
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
 
-    train_loss = extract_metric(train_metrics['train'], 'net_loss')
-    val_loss = extract_metric(train_metrics['val'], 'net_loss')
+    train_loss = extract_metric(train_metrics, 'net_loss')
+    val_loss = extract_metric(val_metrics, 'net_loss')
     test_loss = test_metrics['net_loss']
 
-    train_accuracy = extract_metric(train_metrics['train'], 'net_accuracy')
-    val_accuracy = extract_metric(train_metrics['val'], 'net_accuracy')
+    train_accuracy = extract_metric(train_metrics, 'net_accuracy')
+    val_accuracy = extract_metric(val_metrics, 'net_accuracy')
     test_accuracy = test_metrics['net_accuracy']
 
-    train_precision = extract_metric(train_metrics['train'], 'precision')
-    val_precision = extract_metric(train_metrics['val'], 'precision')
+    train_precision = extract_metric(train_metrics, 'precision')
+    val_precision = extract_metric(val_metrics, 'precision')
     test_precision = test_metrics['precision']
 
-    train_recall = extract_metric(train_metrics['train'], 'recall')
-    val_recall = extract_metric(train_metrics['val'], 'recall')
+    train_recall = extract_metric(train_metrics, 'recall')
+    val_recall = extract_metric(val_metrics, 'recall')
     test_recall = test_metrics['recall']
 
 
@@ -58,23 +60,24 @@ def create_figures(train_metrics, test_metrics, model_name):
     axs[2].set_ylabel('Score')
     axs[2].legend()
 
-    try:
-        os.makedirs(os.path.join('results', 'figures', model_name))
-    except:
-        print()
+    if save_path:
+        os.makedirs(save_path, exist_ok=True)
+        os.makedirs(os.path.join(save_path, model_name), exist_ok=True)
 
-    plt.savefig(os.path.join('results', 'figures', model_name, 'out.png'))
 
-    return None
+        plt.savefig(os.path.join(save_path, model_name, 'loss-accuracy-precision.png'))
+
+    plt.show()
+
 
 def extract_metric(metric_list, key):
     return [item[key] for item in metric_list]
 
 
 
-def category_histograms(model_name, plot_name, category_metrics):
+def category_histograms(model_name, plot_name, category_metrics, save_path=None):
 
-    fig, ax = plt.subplots(1, len(category_metrics.keys()), figsize=(15, 5))
+    fig, ax = plt.subplots(1, len(category_metrics.keys()) + 1, figsize=(15, 5))
 
     metrics = ['tp', 'fp', 'tn', 'fn']
     upper_limit = 0
@@ -89,8 +92,20 @@ def category_histograms(model_name, plot_name, category_metrics):
         # ax[i].set_yscale('log')
 
     fig.suptitle(plot_name + "-" + model_name)
-
-    plt.savefig(os.path.join('results', 'figures', f'{plot_name + "-" + model_name}.png'))
+    
+    values = category_metrics['num_changes']
+    ground_truth = [item[0] for item in values]
+    predictions = [item[1] for item in values]
+    
+    ax[-1].stem(np.arange(len(predictions)), predictions, label='Prediction')
+    ax[-1].stem(np.arange(len(ground_truth)), ground_truth, label = 'Ground Truth')
+    ax[-1].legend()
+    ax[-1].set_title("Number of Changes Per Image")
+    
+    
+    if save_path:
+        os.makedirs(os.path.join(save_path, 'figures'), exist_ok=True)
+        plt.savefig(os.path.join(save_path, 'figures', 'categorical.png'))
     plt.show()
 
 

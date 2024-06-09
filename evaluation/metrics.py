@@ -2,13 +2,72 @@ import torch
 from torch.autograd import Variable
 from tqdm import tqdm as tqdm
 import numpy as np
-from math import ceil
 import cv2
 
-IOU_THRESHOLD = 0.8
+IOU_THRESHOLD = 0.5
 
 
-def evaluate_net_predictions(net, criterion, dataset, patch_size):
+def evaluate_net_prediction_batch(predictions, ground_truths, IOU_THRESHOLD=0.5):
+    predictions = predictions.cpu().detach().numpy()
+    ground_truths = ground_truths.cpu().detach().numpy()
+    
+    batch_size = predictions.shape[0]
+    
+    results = [0, 0, 0, 0]
+
+    for i in range(batch_size):
+        prediction = predictions[i]
+        ground_truth = ground_truths[i]
+        
+        predicted =  np.exp(np.squeeze(prediction)[1])
+        predicted = np.where(predicted < 0.5, 0, 1)
+        
+        ground_truth = np.squeeze(ground_truth)
+        ground_truth = (ground_truth - np.min(ground_truth)) / (np.ptp(ground_truth)) if np.ptp(ground_truth) != 0 else np.zeros_like(ground_truth)
+        
+        pr = np.where(predicted > 0.5, 1, 0)
+        gt = np.where(ground_truth > 0.5, 1, 0)
+        
+        pr = pr.flatten()
+        gt = gt.flatten()
+        
+        tp_img = np.sum(pr & gt)
+        tn_img = np.sum(~pr & ~gt)
+        fp_img = np.sum(pr & ~gt)
+        fn_img = np.sum(~pr & gt)
+        
+        iou = tp_img / max(tp_img + fn_img + fp_img, 1e-10)
+        no_object = tp_img + fn_img == 0
+
+        result = None
+        
+        if iou >= min(IOU_THRESHOLD, 1):
+            result = [1, 0, 0, 0] #tp
+        elif iou > 0 and no_object:
+            results = [0, 1, 0, 0] #fp
+        elif iou < IOU_THRESHOLD and no_object:
+            result = [0, 0, 1, 0] #tn
+        elif iou < IOU_THRESHOLD and (not no_object):
+            result = [0, 0, 0, 1] #fn
+
+        else:
+            raise ValueError('You shoudn\'t be here')
+        
+        results = np.add(results, result)
+
+
+    
+    batch_accuracy = 100 * (results[0] + results[2]) / batch_size
+    prec = results[0] / max(1, (results[0] + results[1]))
+    rec = results[0] / max(1, (results[0] + results[3]))
+
+
+    return {'batch_accuracy': batch_accuracy, 
+            'precision': prec, 
+            'recall': rec}
+    
+
+def evaluate_net_predictions(net, criterion, dataset):
     net.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -22,9 +81,8 @@ def evaluate_net_predictions(net, criterion, dataset, patch_size):
     tot_count = 0
 
     for img_index in dataset.names:
-        I1, I2, cm, _ = dataset.get_img(img_index)
+        I1, I2, cm, _, _ = dataset.get_img(img_index)
 
-        cm = cm.astype(float) / 255
         I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
         I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
         cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
@@ -35,28 +93,25 @@ def evaluate_net_predictions(net, criterion, dataset, patch_size):
         tot_loss += loss.data * np.prod(cm.size())
         tot_count += np.prod(cm.size())
 
-        _, predicted = torch.max(output.data, 1)
-
-        predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
-        predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
-        cm = np.squeeze(cm.cpu().detach().numpy())
-        cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
+        predicted =  np.exp(np.squeeze(output.cpu().detach().numpy())[1])
         predicted = np.where(predicted < 0.5, 0, 1)
-        cm = np.where(cm < 0.5, 0, 1)
-        
-        pr = np.where(predicted > 0.5 , 1, 0)
+
+        cm = np.squeeze(cm.cpu().detach().numpy())
+        cm = (cm - np.min(cm)) / (np.ptp(cm)) if np.ptp(cm) != 0 else np.zeros_like(cm)
         gt = np.where(cm > 0.5, 1, 0)
+
+        pr = predicted.flatten()
+        gt = gt.flatten()
+
+
                 
-        # pr = (predicted.int() > 0).cpu().numpy()
-        # gt = (cm.data.int() > 0).cpu().numpy()
-        
-        
-        tp_img = np.logical_and(pr, gt).sum()
-        tn_img = np.logical_and(np.logical_not(pr), np.logical_not(gt)).sum()
-        fp_img = np.logical_and(pr, np.logical_not(gt)).sum()
-        fn_img = np.logical_and(np.logical_not(pr), gt).sum()
+        tp_img = np.sum(pr & gt)
+        tn_img = np.sum(~pr & ~gt)
+        fp_img = np.sum(pr & ~gt)
+        fn_img = np.sum(~pr & gt)
 
         iou = tp_img / max(tp_img + fn_img + fp_img, 1e-10)
+        # print(iou)
         no_object = tp_img + fn_img == 0
 
         if iou >= min(IOU_THRESHOLD, 1):
@@ -68,12 +123,6 @@ def evaluate_net_predictions(net, criterion, dataset, patch_size):
         if iou < IOU_THRESHOLD and no_object:
             tn += 1
         
-        
-
-
-
-        
-
 
     net_loss = tot_loss/tot_count        
     net_loss = float(net_loss.cpu().numpy())
@@ -113,14 +162,19 @@ def map_to_categorical(img):
     return positions.reshape(img.shape)
 
 
-def evaluate_img_categorically(y, y_hat, y_category, categories):
+def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories):
 
 
     out = {c: [0, 0, 0, 0] for c in categories}
+    
+    
+    num_changes_predicted = len(cv2.findContours(cv2.cvtColor(y_hat.copy(), cv2.COLOR_BGR2GRAY), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])
+    out['num_changes'] = [num_changes, num_changes_predicted]
+    
     y_category = y_category[:, :, 0].astype(int)
     
-
     for c in categories:
+        
         mask = y_category == categories.index(c)  # Create a mask for the current category
 
 
@@ -154,19 +208,27 @@ def evaluate_categories(net, dataset_name, dataset, categories):
 
     for c in categories:
         categorical_metrics[c] = [0, 0, 0, 0] #tp, fp, tn,  fn
+        
+    categorical_metrics['num_changes'] = []
 
     index = 0
+    
+    num_changes = 0
 
     for img_index in dataset.names:
         index += 1
 
-        if dataset_name == "CSCD":
-            I1, I2, cm, situation = dataset.get_img(img_index)
-            categorical = np.divide(cv2.cvtColor(cm, cv2.COLOR_GRAY2RGB), 255)
-            categorical = np.multiply(categorical, categories.index(situation))
+        if dataset_name is "CSCD":
+            I1, I2, cm, situation, num_changes = dataset.get_img(img_index)
+            # categorical = np.divide(cv2.cvtColor(cm, cv2.COLOR_GRAY2RGB), 255)
+            categorical = np.multiply(cm, categories.index(situation))
+            categorical = np.expand_dims(categorical, axis=0)
+            print(categorical.shape)
+
 
         elif dataset_name in ["HRSCD", "HIUCD"]:
             I1, I2, cm, categorical = dataset.get_img(img_index)
+            num_changes = len(cv2.findContours(cv2.cvtColor(cm.copy(), cv2.COLOR_BGR2GRAY), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])
             categorical = cluster_image_colors(categorical, categories)
 
             categorical = map_to_categorical(categorical)
@@ -178,7 +240,6 @@ def evaluate_categories(net, dataset_name, dataset, categories):
         I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
         I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
 
-        cm = cm.astype(float) / 255
         cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
 
 
@@ -187,18 +248,20 @@ def evaluate_categories(net, dataset_name, dataset, categories):
         _, predicted = torch.max(output.data, 1)
 
 
-        predicted = np.squeeze(output.cpu().detach().numpy())[0] -np.squeeze(output.cpu().detach().numpy())[1]
-        predicted = (predicted - np.min(predicted)) / (np.max(predicted) - np.min(predicted))
+        predicted = np.exp(np.squeeze(output.cpu().detach().numpy())[1])
         cm = np.squeeze(cm.cpu().detach().numpy())
         cm = (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
         predicted = np.where(predicted < 0.5, 0, 1)
         cm = np.where(cm < 0.5, 0, 1)
 
-        curr_metrics = evaluate_img_categorically(cm, predicted, categorical, categories)
+        curr_metrics = evaluate_img_categorically(cm, predicted, num_changes, categorical, categories)
 
         for c in categories:
             categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
+        categorical_metrics['num_changes'].append(curr_metrics['num_changes'])
 
 
 
     return categorical_metrics
+
+
