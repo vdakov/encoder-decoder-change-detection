@@ -1,3 +1,4 @@
+import csv
 import numpy as np
 import pandas as pd 
 import os 
@@ -11,7 +12,7 @@ def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_pat
         os.makedirs(save_path, exist_ok=True)
 
         train_filename = os.path.join(save_path, 'train_metrics.csv')
-        val_filename = os.path.join(save_path, 'train_metrics.csv')
+        val_filename = os.path.join(save_path, 'val_metrics.csv')
         test_filename = os.path.join(save_path, 'test_metrics.csv')
 
         train_frame.to_csv(train_filename, sep=',', index=False, encoding='utf-8')
@@ -31,6 +32,24 @@ def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_pat
 
         with open(test_filename_tex, 'w', encoding='utf-8') as f:
             f.write(test_frame.to_latex(index=False))
+            
+def create_categorical_tables(categorical_metrics, model_name, save_path=None):
+
+ 
+    filename_category = os.path.join(save_path, 'categorical_metrics.csv')
+    
+    
+
+    with open(filename_category, 'w', newline='') as csv_file:
+        fieldnames = categorical_metrics.keys()
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        data = [{field: value for field, value in zip(fieldnames, row)} for row in zip(*categorical_metrics.values())]
+    
+        
+        writer.writerows(data)
+
+
 
 
 def load_metrics(model_path):

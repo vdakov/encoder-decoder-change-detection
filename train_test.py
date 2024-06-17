@@ -1,7 +1,7 @@
+import copy
 import torch
 from torch.autograd import Variable
 from metrics import evaluate_net_predictions
-from metrics import evaluate_net_prediction_batch
 from tqdm import tqdm as tqdm
 import time
 import numpy as np
@@ -12,12 +12,14 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
     train_metrics = []
     val_metrics = []
-    prev_val_metrics = {'net_loss':0, 'net_accuracy':0, 'precision':0, 'recall':0}
-    n_batches = 0
+    
+    patience = 5
+    best_loss = float('inf')
+    best_model_weights = None
+    
 
     for epoch in range(n_epochs):
         net.train()
-
         cumulative_metrics = {metric: 0 for metric in ['net_loss', 'net_accuracy', 'precision', 'recall']}
 
         with tqdm(total=len(train_loader), desc=f'Epoch {epoch+1}/{n_epochs}', unit='batch') as pbar:
@@ -25,21 +27,14 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
                 I1 = Variable(batch['I1'].float().to(device))
                 I2 = Variable(batch['I2'].float().to(device))
                 label = Variable(batch['label'].long().to(device))
-
+ 
                 optimizer.zero_grad()
 
                 output = net(I1, I2).to(device)
-
-
-                loss = criterion(output, label)
-                batch_metrics = evaluate_net_prediction_batch(output, label)
-
-                cumulative_metrics['net_loss'] += loss.item()
-                cumulative_metrics['net_accuracy'] += batch_metrics['batch_accuracy']
-                cumulative_metrics['precision'] += batch_metrics['precision']
-                cumulative_metrics['recall'] += batch_metrics['recall']
                 
-                n_batches += 1
+     
+                loss = criterion(output, label)
+                
                 loss.backward()
                 optimizer.step()
 
@@ -49,19 +44,30 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
 
         scheduler.step()
 
-        train_metrics_epoch = {}
-        for metric in cumulative_metrics:
-          train_metrics_epoch[metric] = cumulative_metrics[metric] / n_batches
-        
-        train_metrics.append(train_metrics_epoch)
+        train_metrics.append(evaluate_net_predictions(net, criterion, train_dataset))
         if not skip_val:
             curr_val_metrics = evaluate_net_predictions(net, criterion, val_dataset)
             val_metrics.append(curr_val_metrics)
 
+            val_loss = curr_val_metrics['net_loss']
+            
+            if early_stopping and val_loss < best_loss:
+                best_loss = val_loss
+                best_model_weights = copy.deepcopy(net.state_dict())  
+                patience = 5  
+            else:
+                if epoch > 10:
+                    patience -= 1
+                if patience == 0:
+                    break
+            
+
 
     if save:
-
-        torch.save(net.state_dict(), save_dir)
+        if early_stopping:
+            torch.save(best_model_weights, save_dir)
+        else: 
+            torch.save(net.state_dict(), save_dir)
 
 
     return train_metrics, val_metrics

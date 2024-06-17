@@ -142,8 +142,6 @@ class SiamUnet_diff(nn.Module):
         x43_2 = self.do43(F.relu(self.bn43(self.conv43(x42))))
         x4p = F.max_pool2d(x43_2, kernel_size=2, stride=2)
 
-
-
         # Stage 4d
         x4d = self.upconv4(x4p)
         pad4 = ReplicationPad2d((0, x43_1.size(3) - x4d.size(3), 0, x43_1.size(2) - x4d.size(2)))

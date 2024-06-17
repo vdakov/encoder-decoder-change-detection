@@ -8,36 +8,17 @@ import os
 import csv
 import shutil
 
-def give_random_color_bg():
-    colors = [
-        (255, 0, 0),   # Red
-        (0, 255, 0),   # Green
-        (0, 0, 255),   # Blue
-        (255, 255, 0), # Yellow
-        (0, 255, 255), # Cyan
-        (255, 0, 255), # Magenta
-        (192, 192, 192), # Silver
-        (128, 128, 128), # Gray
-    ]
+def give_random_colors():
     
-    return random.choice(colors)
+    color1 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    color2 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    
+    # Ensure the two colors are different
+    while color2 == color1:
+        color2 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    
+    return color1, color2
 
-
-def give_random_color_fg():
-    colors = [
-        (128, 0, 0),   # Maroon
-        (128, 128, 0), # Olive
-        (0, 128, 0),   # Dark Green
-        (128, 0, 128), # Purple
-        (0, 128, 128), # Teal
-        (0, 0, 128),   # Navy
-        (255, 165, 0), # Orange
-        (255, 192, 203) # Pink
-    ]
-    
-    return random.choice(colors)
-    
-    
 
 
 
@@ -226,11 +207,11 @@ situation_label = []
 
 change_methods = [large_changes, small_change]
 sets = ['train', 'test', 'val']
-# sizes = [64, 32, 32]
+sizes = [64, 32, 32]
 # sizes = [608, 208, 208]
-sizes = [1024, 512, 512]
-
-os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
+# sizes = [2048, 512, 512]
+os.makedirs(os.path.join('..', 'data', 'CSCD-Toy'), exist_ok=True)
+# os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
 for i, set in enumerate(sets):
     set_path = os.path.join('..', 'data', 'CSCD', set)
     t1_dir = os.path.join(set_path, 'A')
@@ -249,8 +230,7 @@ for i, set in enumerate(sets):
             time_1 = create_base_image(128, 128)
             time_1, time_2, label, situation, num_changes = change(time_1)
 
-            bg_color = give_random_color_bg()
-            building_color = give_random_color_fg()
+            bg_color, building_color = give_random_colors()
             
 
             time_1 = recolor_img(time_1, bg_color, building_color)
@@ -274,8 +254,7 @@ for i, set in enumerate(sets):
             time_1, time_2, label, situation, num_changes = change(time_1, uniform=False)
 
 
-            bg_color = give_random_color_bg()
-            building_color = give_random_color_fg()
+            bg_color, building_color = give_random_colors()
 
 
             time_1 = recolor_img(time_1, bg_color, building_color)
@@ -301,7 +280,9 @@ for i, set in enumerate(sets):
 
 
 cscd_dir = os.path.join('..', 'data', 'CSCD')
-zip_filename = os.path.join('..', 'data', 'CSCD')
+# cscd_dir = os.path.join('..', 'data', 'CSCD-Toy')
+# zip_filename = os.path.join('..', 'data', 'CSCD')
+zip_filename = os.path.join('..', 'data', 'CSCD-Toy')
 shutil.make_archive(base_name=zip_filename, format='zip', root_dir=cscd_dir)
 
 
