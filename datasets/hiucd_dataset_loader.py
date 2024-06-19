@@ -45,16 +45,17 @@ class HIUCD_Dataset(Dataset):
             self.names.append(img_name)
             a = reshape_for_torch(cv2.imread(os.path.join(dirname,set_name,"A", name)))
             b = reshape_for_torch(cv2.imread(os.path.join(dirname,set_name, "B", name)))
-            label = cv2.imread(os.path.join(dirname, set_name, "label", name), cv2.IMREAD_COLOR)   
+            label = cv2.imread(os.path.join(dirname, set_name, "label", name))
+            
             
             landcover_label = label[:, :, 2].astype(np.uint8)
-            label = label[:, :, 0].astype(np.uint8)
-            label = np.where(label <= 1, 0, 1)
+            label = np.where(label[:, :, 0] < 2, 0, 255).astype(np.uint8)
+            label = (label - np.min(label)) / (np.ptp(label)) if np.ptp(label) != 0 else np.zeros_like(label)
             
 
             self.imgs_1[img_name] = a
             self.imgs_2[img_name] = b
-            self.change_maps[img_name] = label
+            self.change_maps[img_name] = label.astype(np.uint8) 
             self.land_covers[img_name] = landcover_label
             self.num_changes[img_name] = len(cv2.findContours(label.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])
 

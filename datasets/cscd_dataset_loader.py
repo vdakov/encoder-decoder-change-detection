@@ -55,6 +55,7 @@ class CSCD_Dataset(Dataset):
             img_name = set_name + "-" + name
             self.names.append(img_name)
             a = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name,"A", name)))
+
             b = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name, "B", name)))
             label = cv2.imread(os.path.join(dirname, set_name, "label", name), cv2.IMREAD_GRAYSCALE)
             label = (label - np.min(label)) / (np.ptp(label)) if np.ptp(label) != 0 else np.zeros_like(label)

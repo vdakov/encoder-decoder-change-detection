@@ -56,6 +56,7 @@ def evaluate_net_predictions_batch(net, criterion, dataset, dataset_loader):
         
         denominator = tp_img + fn_img + fp_img
         iou = tp_img / denominator if denominator != 0 else 0.0
+        print(iou)
         
         prediction_made = tp_img + fp_img > 0
         no_object = tp_img + fn_img == 0
@@ -102,7 +103,7 @@ def evaluate_net_predictions(net, criterion, dataset):
 
         I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
         I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-        cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
+        cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm), 0).long().to(device))
 
         output = net(I1, I2).float().to(device)
 
@@ -126,6 +127,8 @@ def evaluate_net_predictions(net, criterion, dataset):
         
         
         assert (np.sum([tp_img, fp_img, tn_img, fn_img]) == len(pr))
+        
+        
         
         denominator = tp_img + fn_img + fp_img
         iou = tp_img / denominator if denominator != 0 else 0.0
@@ -156,9 +159,12 @@ def evaluate_net_predictions(net, criterion, dataset):
             'recall': rec, 
             "f1": f1}
 
-def cluster_image_colors(img, categories):
-    Z = img.reshape((-1,3))
-    Z = np.float32(Z)
+def cluster_image_colors(img, dataset_name, categories):
+    if dataset_name == 'HRSCD':
+        Z = img.reshape((-1,3))
+        Z = np.float32(Z)
+    else: 
+        Z = np.float32(img)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     K = len(categories)
     _, label, center = cv2.kmeans(Z, K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
@@ -250,9 +256,9 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir):
             I1, I2, cm, situation, num_changes = dataset.get_img(img_index)
             categorical = np.multiply(cm, categories.index(situation) + 1)
             categorical = np.expand_dims(categorical, axis=0)
-        elif dataset_name == "HRSCD":
+        elif dataset_name == "HRSCD" or dataset_name == "HIUCD":
             I1, I2, cm, categorical, num_changes = dataset.get_img(img_index)
-            categorical = cluster_image_colors(categorical, categories)
+            categorical = cluster_image_colors(categorical, dataset_name, categories)
             categorical = map_to_categorical(categorical)
         else:
             print('Not a categorical dataset')

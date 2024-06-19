@@ -10,7 +10,7 @@ import rasterio
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dirname", type = str, default = os.path.join("..", "..", "data", "HRSCD", "A"))
+    parser.add_argument("--dirname", type = str, default = os.path.join("..", "data", "HRSCD", "A"))
     parser.add_argument("--resize_ratio", type=float, default = 1)
     
     
@@ -64,12 +64,14 @@ def resize_aspect_fit(path, resize_ratio):
 
 if __name__ == "__main__":
     args = get_args()
+    
+    resize_ratio = 0.25
 
-    # resize_aspect_fit(args.dirname, args.resize_ratio)
-    # resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "B"), 0.1)
-    resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels"), 0.1)
-    # resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels_land_cover_A"), 0.1)
-    resize_aspect_fit(os.path.join("..", "..", "data", "HRSCD", "labels_land_cover_B"), 0.1)
+    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "A"), resize_ratio)
+    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "B"), resize_ratio)
+    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "labels"), resize_ratio)
+    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "labels_land_cover_A"), resize_ratio)
+    resize_aspect_fit(os.path.join(     "..", "data", "HRSCD", "labels_land_cover_B"), resize_ratio)
 
 
 

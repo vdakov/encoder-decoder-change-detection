@@ -6,8 +6,8 @@ from sklearn.model_selection import train_test_split
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_path", type = str, default = os.path.join("..", "..", "data", "HRSCD"))
-    parser.add_argument("--base_path", type=str, default = 1)
+    parser.add_argument("--dataset_path", type = str, default = os.path.join("..", "data", "HRSCD"))
+    parser.add_argument("--base_path", type=str, default = os.path.join("..", "data", "HRSCD"))
     
     
     
@@ -17,8 +17,16 @@ def get_args():
 def copy_data(classes, images, dataset_path, base_path, set_name):
 
     for img in images: 
-        for c in classes:
-            shutil.copy(os.path.join(dataset_path, c, img), os.path.join(base_path,set_name, c))
+        all_exist = all(os.path.exists(os.path.join(dataset_path, c, img)) for c in classes)
+        
+        if all_exist:
+            print('Success')
+            for c in classes:
+                source_path = os.path.join(dataset_path, c, img)
+                destination_path = os.path.join(base_path, set_name, c)
+                shutil.copy(source_path, destination_path)
+        else:
+            print(f"Image {img} does not exist in all classes. Skipping.")
 
 
 

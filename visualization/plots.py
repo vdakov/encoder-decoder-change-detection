@@ -6,6 +6,14 @@ import numpy as np
 from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['DejaVu Serif']
+rcParams['font.size'] = 24  # You can change this to the desired font size
+rcParams['font.weight'] = 'bold'
+rcParams['axes.titlesize'] = 24  # Title font size
+rcParams['axes.titleweight'] = 'bold'  # Title font weight
+rcParams['axes.labelsize'] = 24  # Axis label font size
+rcParams['axes.labelweight'] = 'bold'  # Axis label font weight
+rcParams['xtick.labelsize'] = 24  # X tick label font size
+rcParams['ytick.labelsize'] = 12  # Y tick label font size
 
 
 
@@ -113,7 +121,7 @@ def category_histograms(model_name, plot_name, category_metrics, save_path=None)
                         plt.Line2D([0], [0], color='orange', lw=2),
                         plt.Line2D([0], [0], color='purple', lw=2)]
         
-        ax[i].legend(custom_lines, legend_labels, loc='upper right')
+        # ax[i].legend(custom_lines, legend_labels, loc='upper right')
         ax[i].bar(metrics, category_metrics[c])
         ax[i].set_title(c)
 
@@ -145,8 +153,13 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
   
     all_values = [value for d in aggregate_category_metrics for value in list(d.values())[:-1]]
     y_limit = np.max(all_values)
+    
+    num_categories = len(aggregate_category_metrics[0].keys()) - 1
+    num_cols = int(np.ceil(num_categories / 2))
+    num_rows = 2
 
-    fig, ax = plt.subplots(1, len(aggregate_category_metrics[0].keys()) - 1, figsize=(14, 4))
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(15, 5 * num_rows))
+    # fig.suptitle(plot_name, weight = 'bold')
     metrics = ['TP', 'FP', 'TN', 'FN']
     
     results = []
@@ -159,12 +172,13 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
                   "Agricultural areas": "Agricultural areas", "Forests" : "Forests", "Wetlands" : "Wetlands", "Water": "Water"}
     
     for i, c in enumerate(list(aggregate_category_metrics[0].keys())[:-1]):
-    
+        
+        row, col = divmod(i, num_cols)
+        ax = axes[row, col]
         x = np.arange(len(metrics))  # the label locations
  
         width = 0.24
         multiplier = 0
-        print(c)
 
         for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
             
@@ -179,13 +193,13 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
             
             
             offset = width * multiplier
-            rects = ax[i].bar(x + offset, category_metrics[c], width, color=colors[model_name])
+            rects = ax.bar(x + offset, category_metrics[c], width, color=colors[model_name])
             multiplier += 1
 
             
-            ax[i].set_ylim(0, int(1.1 * y_limit))
-            ax[i].set_title(titles[c])
-            ax[i].set_xticks(x + width, metrics)
+            ax.set_ylim(0, int(1.1 * y_limit))
+            ax.set_title(titles[c])
+            ax.set_xticks(x + width, metrics)
 
             
             results.append({
@@ -196,6 +210,9 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
                 'f1_score': f1
             })
             
+    #hide unused plots     
+    for i in range(num_categories, num_rows * num_cols):
+        fig.delaxes(axes.flat[i]) 
             
            
            
@@ -207,15 +224,17 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
         plt.Line2D([0], [0], color=colors["Late"], lw=2, label="_Late")
     ]
 
-    fig.legend(custom_lines, list(colors.keys()), loc='upper left')
+    # fig.legend(custom_lines, list(colors.keys()), loc='upper left')
+    plt.tight_layout()
+    # plt.subplots_adjust(left=0.05, right=0.05, top=0.05, bottom=0.05)
 
-    plt.title(plot_name, weight='bold')
         
     if save_path:
         os.makedirs(os.path.join(save_path), exist_ok=True)
         plt.savefig(os.path.join(save_path, 'aggregate_categorical.png'))
         results_df = pd.DataFrame(results)
         results_df.to_csv(os.path.join(save_path,  'metrics_results.csv'), index=False)
+        
     
     plt.show()
     
@@ -225,6 +244,7 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
     markers = {"Early": 'o', "Mid-Conc.": 's', "Mid-Diff.": '^', "Late": 'D'}
     gt_label_added = False
     
+    plt.figure(figsize=(8, 5))
 
     for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
 
@@ -242,8 +262,8 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
         
     plt.xlabel('# Predicted Changes')
     plt.ylabel('# Actual Changes')
-    plt.title(plot_name, weight='bold', fontname='Times New Roman')
-    plt.legend()
+    # plt.title(plot_name, weight='bold')
+    # plt.legend()
 
     if save_path:
         os.makedirs(os.path.join(save_path), exist_ok=True)

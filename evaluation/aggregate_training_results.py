@@ -5,17 +5,26 @@ import os
 from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['DejaVu Serif']
+rcParams['font.size'] = 24  # You can change this to the desired font size
+rcParams['font.weight'] = 'bold'
+rcParams['axes.titlesize'] = 24  # Title font size
+rcParams['axes.titleweight'] = 'bold'  # Title font weight
+rcParams['axes.labelsize'] = 24  # Axis label font size
+rcParams['axes.labelweight'] = 'bold'  # Axis label font weight
+rcParams['xtick.labelsize'] = 24  # X tick label font size
+rcParams['ytick.labelsize'] = 24  # Y tick label font size
+
 
 
 
 
 def plot_loss(experiment_name, fusions, colors):
     path = os.path.join('experiment_results', experiment_name)
-    plt.figure(figsize=(7, 4))
-    font_properties = {'family': 'serif', 'serif': ['Times New Roman'], 'weight': 'normal', 'size': 12}
+    plt.figure(figsize=(8, 5))
+    
 
-    plt.xlabel('Epochs', fontdict=font_properties)
-    plt.ylabel('Loss', fontdict=font_properties)
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
 
     for f in fusions:
         dir = f + "-" + experiment_name 
@@ -34,15 +43,8 @@ def plot_loss(experiment_name, fusions, colors):
                 validation_results.append(float(row['net_loss']))
             plt.plot(np.arange(len(validation_results)), validation_results, label=f'{f}-Val.', color=colors[f], linestyle='dashed')
     
-    plt.title(' Loss', weight='bold', fontname='Times New Roman')
-    plt.legend()
+    # plt.title('Loss', weight='bold')
     plt.savefig(os.path.join(path, 'aggregated_loss.png'))
     plt.tight_layout()
     plt.show()
     
-    
-# experiment_name = 'CSCD-FIRST-EXPERIMENT'
-# fusions = ["Early", "Middle-Conc", "Middle-Diff", "Late"]
-# colors = {"Early": 'blue', "Middle-Conc": 'orange', "Middle-Diff": 'lime', "Late": 'red'}
-
-# plot_loss(experiment_name, fusions, colors)

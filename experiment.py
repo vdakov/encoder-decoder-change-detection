@@ -26,7 +26,7 @@ from metrics import evaluate_categories, evaluate_net_predictions
 from plots import aggregate_category_histograms, category_histograms, compare_number_of_buildings, create_figures
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
-from tables import create_categorical_tables, create_tables, load_metrics
+from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics
 from train_test import train
 from unet import Unet 
 from late_siam_net import SiamLateFusion
@@ -47,8 +47,8 @@ def get_args():
 
     return parser.parse_args()
 
-# fusions = ["Early", "Middle-Conc", "Middle-Diff", "Late"]
-fusions = ["Late"]
+fusions = ["Early", "Middle-Conc", "Middle-Diff", "Late"]
+# fusions = ["Late"]
 
 
 def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, criterion, epochs, restore_prev=False):
@@ -57,6 +57,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     os.makedirs(experiment_path, exist_ok=True)
 
     train_set, val_set, test_set = datasets
+    
     train_set_loader, val_set_loader, test_set_loader = dataset_loaders
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     aggregate_categorical = []
@@ -75,14 +76,15 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         net.to(device)
 
         model_path = os.path.join(experiment_path, net_name)
-        
-        
+        categorical_metrics = {}
+
 
         if os.path.exists(f'{model_path}.pth') and restore_prev == True:
-            net = torch.load(os.path.join(model_path, f'{net_name}.pth'))
-            net.to(device)
+            state_dict = torch.load(f'{model_path}.pth')
+            net.load_state_dict(state_dict)
             
             training_metrics, validation_metrics, test_metrics = load_metrics(model_path)
+            categorical_metrics = load_categorical_metrics(model_path)
         else: 
             os.makedirs(model_path, exist_ok=True)
 
@@ -90,6 +92,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             test_metrics = evaluate_net_predictions(net, criterion, test_set)
             create_tables(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'tables'))
 
+        
         create_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
         examine_subset(net, net_name, test_dataset, 10, device, os.path.join(model_path, 'figures'))
         
@@ -120,8 +123,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     plot_loss(experiment_name, fusions, colors)
 
-    aggregate_category_histograms(dataset_name, f'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
-    compare_number_of_buildings(dataset_name, f'# Predicted Buildings', aggregate_categorical, os.path.join(experiment_path))
+    aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
+    compare_number_of_buildings(dataset_name, '# Predicted Buildings', aggregate_categorical, os.path.join(experiment_path))
 
 def get_dataset(dataset_name, dirname, mode, FP_MODIFIER):
     if dataset_name == 'LEVIR':

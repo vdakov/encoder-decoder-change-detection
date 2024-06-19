@@ -31,8 +31,6 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
                 optimizer.zero_grad()
 
                 output = net(I1, I2).to(device)
-                
-     
                 loss = criterion(output, label)
                 
                 loss.backward()
