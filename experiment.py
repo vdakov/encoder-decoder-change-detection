@@ -32,6 +32,9 @@ from unet import Unet
 from late_siam_net import SiamLateFusion
 import argparse
 from aggregate_training_results import plot_loss
+import gc
+
+
 
 
 
@@ -44,14 +47,14 @@ def get_args():
     parser.add_argument("--dir", type = str, default = os.path.join("..", "..", "data", "LEVIR-CD - Toy"))
     parser.add_argument("--dataset_name", type = str, default = os.path.join("..", "..", "data", "LEVIR-CD - Toy"))
     parser.add_argument("--restore_prev", type = bool, default = False)
+    parser.add_argument("--generate_plots", type = bool, default = False)
 
     return parser.parse_args()
 
 fusions = ["Early", "Middle-Conc", "Middle-Diff", "Late"]
-# fusions = ["Late"]
 
 
-def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, criterion, epochs, restore_prev=False):
+def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, criterion, epochs, restore_prev=False, generate_plots=False):
     net, net_name = None, None 
     experiment_path = os.path.join('experiment_results', experiment_name)
     os.makedirs(experiment_path, exist_ok=True)
@@ -78,7 +81,6 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         model_path = os.path.join(experiment_path, net_name)
         categorical_metrics = {}
 
-
         if os.path.exists(f'{model_path}.pth') and restore_prev == True:
             state_dict = torch.load(f'{model_path}.pth')
             net.load_state_dict(state_dict)
@@ -96,21 +98,25 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         create_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
         examine_subset(net, net_name, test_dataset, 10, device, os.path.join(model_path, 'figures'))
         
-        if dataset_name == "CSCD":
+        if dataset_name == "CSCD" and generate_plots:
             categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["large_change_uniform", "large_change_non_uniform", "small_change_non_uniform", "small_change_uniform"], os.path.join(model_path, 'figures'))
             aggregate_categorical.append(categorical_metrics)
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
             category_histograms(net_name, 'Categorical Metrics', categorical_metrics, os.path.join(model_path, 'figures'))
-        if dataset_name == "HRSCD":
+        if dataset_name == "HRSCD"and generate_plots:
             categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["No information", "Artificial surfaces", "Agricultural areas", "Forests", "Wetlands", "Water"], os.path.join(model_path, 'figures'))
             aggregate_categorical.append(categorical_metrics)
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
             category_histograms(net_name, 'Categorical Metrics', categorical_metrics, os.path.join(model_path, 'figures'))
-        if dataset_name == "HIUCD":
+        if dataset_name == "HIUCD"and generate_plots:
             categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["Water", "Grass", "Building", "Greenhouse", "Road", "Bridge", "Bare Land", "Woodland", "Others"], os.path.join(model_path, 'figures'))
             aggregate_categorical.append(categorical_metrics)
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
             category_histograms(net_name, 'Categorical Metrics', categorical_metrics, os.path.join(model_path, 'figures'))
+        if dataset_name == "LEVIR" and generate_plots:
+            categorical_metrics = evaluate_categories(net, dataset_name, test_set, [], os.path.join(model_path, 'figures'))
+            aggregate_categorical.append(categorical_metrics)
+            create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
         
     
     
@@ -122,9 +128,11 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         writer.writerows(aggregate_categorical)
     
     plot_loss(experiment_name, fusions, colors)
-
-    aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
+    
+    if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD":
+        aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
     compare_number_of_buildings(dataset_name, '# Predicted Buildings', aggregate_categorical, os.path.join(experiment_path))
+    
 
 def get_dataset(dataset_name, dirname, mode, FP_MODIFIER):
     if dataset_name == 'LEVIR':
@@ -135,16 +143,21 @@ def get_dataset(dataset_name, dirname, mode, FP_MODIFIER):
         return CSCD_Dataset(dirname, mode, FP_MODIFIER)
     elif dataset_name == 'HIUCD':
         return HIUCD_Dataset(dirname, mode, FP_MODIFIER)
+    elif dataset_name == 'LEVIR':
+        return LEVIR_Dataset(dirname, mode, FP_MODIFIER)
     else:
         raise ValueError("Unknown dataset name")
     
 if __name__ == "__main__":
     args = get_args()
+    experiment_name = args.experiment_name
     dataset_name = args.dataset_name
     directory = args.dir
     batch_size = args.batch_size 
     FP_MODIFIER = args.fp_modifier
     restore_prev = args.restore_prev
+    n_epochs = args.epochs
+    generate_plots = args.generate_plots
     
 
 
@@ -160,7 +173,9 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
     val_loader = DataLoader(val_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
 
-    run_experiment(args.experiment_name, args.dataset_name, [train_dataset, val_dataset, test_dataset], [train_loader, val_loader, test_loader], criterion, args.epochs, restore_prev)
+    run_experiment(experiment_name, dataset_name, [train_dataset, val_dataset, test_dataset], 
+                   [train_loader, val_loader, test_loader], criterion, n_epochs,
+                   restore_prev=restore_prev, generate_plots=generate_plots)
 
     
 

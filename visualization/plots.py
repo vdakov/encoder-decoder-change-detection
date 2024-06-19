@@ -262,7 +262,7 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
         
     plt.xlabel('# Predicted Changes')
     plt.ylabel('# Actual Changes')
-    # plt.title(plot_name, weight='bold')
+    plt.title(plot_name, weight='bold')
     # plt.legend()
 
     if save_path:

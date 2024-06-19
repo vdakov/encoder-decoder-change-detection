@@ -9,81 +9,6 @@ from scipy.stats import median_abs_deviation
 IOU_THRESHOLD = 0.5
 
 
-    
-    
-def evaluate_net_predictions_batch(net, criterion, dataset, dataset_loader):
-    net.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net.to(device)
-
-    tp = 0
-    tn = 0
-    fp = 0
-    fn = 0
-
-    tot_loss = 0
-
-    for batch in dataset_loader:
-        I1_batch, I2_batch, cm_batch, _, _ = batch
-
-        I1_batch = I1_batch.float().to(device)
-        I2_batch = I2_batch.float().to(device)
-        cm_batch = cm_batch.long().to(device)
-
-
-        output_batch = net(I1_batch, I2_batch).float().to(device)
-
-        loss = criterion(output_batch, cm_batch)
-        tot_loss += loss.item()
-
-        predicted =  torch.exp(torch.squeeze(output_batch)[1])
-        predicted = np.where(predicted < 0.5, 0, 1)
-
-        cm = torch.squeeze(cm)
-        cm = (cm - np.min(cm)) / (np.ptp(cm)) if np.ptp(cm) != 0 else np.zeros_like(cm)
-        gt = np.where(cm > 0.5, 1, 0)
-
-        pr = predicted.flatten()
-        gt = gt.flatten()
-        
-        tp_img = np.sum(np.logical_and(pr, gt))
-        tn_img = np.sum(np.logical_and(np.logical_not(pr), np.logical_not(gt)))
-        fp_img = np.sum(np.logical_and(pr, np.logical_not(gt)))
-        fn_img = np.sum(np.logical_and(np.logical_not(pr), gt))
-        
-        
-        assert (np.sum([tp_img, fp_img, tn_img, fn_img]) == len(pr))
-        
-        denominator = tp_img + fn_img + fp_img
-        iou = tp_img / denominator if denominator != 0 else 0.0
-        print(iou)
-        
-        prediction_made = tp_img + fp_img > 0
-        no_object = tp_img + fn_img == 0
-
-        if iou >= IOU_THRESHOLD:
-            tp += 1
-        elif iou < IOU_THRESHOLD and prediction_made:
-            fp += 1
-        elif (iou == 0 or not prediction_made) and (not no_object):
-            fn += 1
-        elif (not prediction_made) and no_object:
-            tn += 1
-
-
-    net_loss = tot_loss / len(dataset.names)
-    net_accuracy = 100 * (tp + tn) / (tp + tn + fp + fn + 1e-10)
-    prec = tp /(tp + fp) if (tp + fp) != 0 else 0
-    rec = tp / (tp + fn) if (tp + fn) != 0 else 0
-    f1 = 2 * (prec * rec) / (prec + rec)  if (prec + rec) != 0 else 0
-    
-
-    return {'net_loss': net_loss,
-            'net_accuracy': net_accuracy,
-            'precision': prec,
-            'recall': rec, 
-            "f1": f1}
-
 
 
 def evaluate_net_predictions(net, criterion, dataset):
@@ -127,8 +52,6 @@ def evaluate_net_predictions(net, criterion, dataset):
         
         
         assert (np.sum([tp_img, fp_img, tn_img, fn_img]) == len(pr))
-        
-        
         
         denominator = tp_img + fn_img + fp_img
         iou = tp_img / denominator if denominator != 0 else 0.0
@@ -261,8 +184,9 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir):
             categorical = cluster_image_colors(categorical, dataset_name, categories)
             categorical = map_to_categorical(categorical)
         else:
-            print('Not a categorical dataset')
-            break
+            I1, I2, cm, _, num_changes = dataset.get_img(img_index)
+            # print('Not a categorical dataset')
+            
 
 
         I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
@@ -281,10 +205,16 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir):
         
         cm = np.where(cm < 0.5, 0, 1)
 
-        curr_metrics = evaluate_img_categorically(cm, predicted, num_changes, categorical, categories, dataset_name)
+        if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD" :
+            curr_metrics = evaluate_img_categorically(cm, predicted, num_changes, categorical, categories, dataset_name)
 
-        for c in categories:
-            categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
+            for c in categories:
+                categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
+        else: 
+            curr_metrics = {'num_changes':[num_changes, 
+                                           len(cv2.findContours(predicted.astype(np.uint8),
+                                                                cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])]}
+            
         categorical_metrics['num_changes'].append(curr_metrics['num_changes'])
         
     b_values = np.array([item[1] for item in categorical_metrics['num_changes']])
