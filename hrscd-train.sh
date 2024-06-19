@@ -10,7 +10,6 @@
 
 
 module load 2023r1 openmpi 
-module load cuda/11.6
 module load python
 module load py-mpi4py
 module load py-torch
