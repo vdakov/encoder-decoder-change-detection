@@ -18,4 +18,4 @@ module load py-numpy
 module load py-pip
 
 srun pip -r install requirements.txt
-srun python experiment.py --experiment_name="HIUCD-Long-Train" --epochs=100--fp_modifier=1 --batch_size=4 --dir="../data/data/LEVIR-CD" --dataset_name="LEVIR"  --generate_plots
+srun python experiment.py --experiment_name="HIUCD-Long-Train" --epochs=100--fp_modifier=1 --batch_size=4 --dir="../data/data/LEVIR-CD" --dataset_name="LEVIR"  --generate_plots=True
