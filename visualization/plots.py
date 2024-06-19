@@ -8,10 +8,8 @@ rcParams['font.family'] = 'serif'
 rcParams['font.serif'] = ['DejaVu Serif']
 rcParams['font.size'] = 24  # You can change this to the desired font size
 rcParams['font.weight'] = 'bold'
-rcParams['axes.titlesize'] = 24  # Title font size
-rcParams['axes.titleweight'] = 'bold'  # Title font weight
+rcParams['axes.titlesize'] = 18  # Title font size
 rcParams['axes.labelsize'] = 24  # Axis label font size
-rcParams['axes.labelweight'] = 'bold'  # Axis label font weight
 rcParams['xtick.labelsize'] = 24  # X tick label font size
 rcParams['ytick.labelsize'] = 12  # Y tick label font size
 
@@ -53,7 +51,7 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
     axs[0].axhline(y=test_loss, color='red', linestyle='--', label='Test')
     axs[0].set_xlabel('Epochs')
     axs[0].set_ylabel('Loss')
-    axs[0].legend()
+    # axs[0].legend()
 
     # Plot accuracy curves
     axs[1].plot(train_accuracy, label='Train', c='blue')
@@ -61,7 +59,7 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
     axs[1].axhline(y=test_accuracy, color='red', linestyle='--', label='Test')
     axs[1].set_xlabel('Epochs')
     axs[1].set_ylabel('Accuracy')
-    axs[1].legend()
+    # axs[1].legend()
 
 
 
@@ -74,7 +72,7 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
     axs[2].set_title('Precision, Recall, and F1 Curve')
     axs[2].set_xlabel('Epochs')
     axs[2].set_ylabel('Score')
-    axs[2].legend()
+    # axs[2].legend()
 
     if save_path:
         os.makedirs(save_path, exist_ok=True)
@@ -262,7 +260,7 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
         
     plt.xlabel('# Predicted Changes')
     plt.ylabel('# Actual Changes')
-    plt.title(plot_name, weight='bold')
+    # plt.title(plot_name, weight='bold')
     # plt.legend()
 
     if save_path:

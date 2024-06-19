@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#SBATCH --job-name="HIUCD-Long-Train"
+#SBATCH --job-name="HRSCD-Long-Train"
 #SBATCH --ntasks=1
 #SBATCH --time=04:00:00
 #SBATCH --partition=gpu
@@ -18,4 +18,4 @@ module load py-numpy
 module load py-pip
 
 srun pip -r install requirements.txt
-srun python experiment.py --experiment_name="HRSCD-Long-Train" --epochs=100--fp_modifier=10 --batch_size=4 --dir="../data/data/HRSCD" --dataset_name="HRSCD"  --generate_plots
+srun python experiment.py --experiment_name="HRSCD-Long-Train" --epochs=100--fp_modifier=10 --batch_size=4 --dir="../data/HRSCD" --dataset_name="HRSCD"  --generate_plots
