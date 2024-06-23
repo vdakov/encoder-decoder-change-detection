@@ -26,14 +26,14 @@ from metrics import evaluate_categories, evaluate_net_predictions
 from plots import aggregate_category_histograms, category_histograms, compare_number_of_buildings, create_figures
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
-from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics
+from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics, store_mean_difference
 from train_test import train
 from unet import Unet 
 from late_siam_net import SiamLateFusion
 import argparse
 from aggregate_training_results import plot_loss
 import gc
-
+import json
 
 
 
@@ -86,7 +86,10 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             net.load_state_dict(state_dict)
             
             training_metrics, validation_metrics, test_metrics = load_metrics(model_path)
-            categorical_metrics = load_categorical_metrics(model_path)
+            
+            if not generate_plots:
+                categorical_metrics = load_categorical_metrics(model_path)
+                aggregate_categorical.append(categorical_metrics)
         else: 
             os.makedirs(model_path, exist_ok=True)
 
@@ -96,7 +99,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
 
         
         create_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
-        examine_subset(net, net_name, test_dataset, 10, device, os.path.join(model_path, 'figures'))
+        examine_subset(net, net_name, test_dataset, 3, device, os.path.join(model_path, 'figures'))
         
         if dataset_name == "CSCD" and generate_plots:
             categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["large_change_uniform", "large_change_non_uniform", "small_change_non_uniform", "small_change_uniform"], os.path.join(model_path, 'figures'))
@@ -104,12 +107,14 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
             category_histograms(net_name, 'Categorical Metrics', categorical_metrics, os.path.join(model_path, 'figures'))
         if dataset_name == "HRSCD"and generate_plots:
-            categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["No information", "Artificial surfaces", "Agricultural areas", "Forests", "Wetlands", "Water"], os.path.join(model_path, 'figures'))
+            categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["No information", "Artificial surfaces", "Agricultural areas", 
+                                                                                    "Forests", "Wetlands", "Water"], os.path.join(model_path, 'figures'))
             aggregate_categorical.append(categorical_metrics)
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
             category_histograms(net_name, 'Categorical Metrics', categorical_metrics, os.path.join(model_path, 'figures'))
         if dataset_name == "HIUCD"and generate_plots:
-            categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["Water", "Grass", "Building", "Greenhouse", "Road", "Bridge", "Bare Land", "Woodland", "Others"], os.path.join(model_path, 'figures'))
+            categorical_metrics = evaluate_categories(net, dataset_name, test_set, ["Unlabeled", "Water", "Grass", "Building", "Green house", 
+                                                                                    "Road", "Bridge", "Others", "Bare land", "Woodland"], os.path.join(model_path, 'figures'))
             aggregate_categorical.append(categorical_metrics)
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
             category_histograms(net_name, 'Categorical Metrics', categorical_metrics, os.path.join(model_path, 'figures'))
@@ -119,15 +124,15 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
         
     
-    
-
-    with open(os.path.join(model_path, 'aggregate_categorical.csv'), 'w', newline='') as csv_file:
-        fieldnames = aggregate_categorical[0].keys()
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(aggregate_categorical)
+    if generate_plots:
+        with open(os.path.join(experiment_path, 'aggregate_categorical.csv'), 'w', newline='') as csv_file:
+            fieldnames = aggregate_categorical[0].keys()
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(aggregate_categorical)
     
     plot_loss(experiment_name, fusions, colors)
+    store_mean_difference(aggregate_categorical, experiment_path)
     
     if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD":
         aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))

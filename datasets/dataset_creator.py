@@ -45,7 +45,7 @@ def create_base_image(width, height):
         img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
 
-        
+    
 
     return img
 
@@ -206,11 +206,13 @@ labels = []
 situation_label = []
 
 change_methods = [large_changes, small_change]
-sets = ['train', 'test', 'val']
-sizes = [64, 32, 32]
+sets = ['illustration']
+# sets = ['train', 'test', 'val']
+sizes = []
+# sizes = [64, 32, 32]
 # sizes = [608, 208, 208]
 # sizes = [2048, 512, 512]
-os.makedirs(os.path.join('..', 'data', 'CSCD-Toy'), exist_ok=True)
+os.makedirs(os.path.join('..', 'data', 'Visualization'), exist_ok=True)
 # os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
 for i, set in enumerate(sets):
     set_path = os.path.join('..', 'data', 'CSCD', set)
@@ -228,6 +230,8 @@ for i, set in enumerate(sets):
     for change in change_methods: 
         for _ in range(sizes[i]):
             time_1 = create_base_image(128, 128)
+            name = f'{change}-uniform-t1.png'
+            cv2.imwrite(os.path.join(t1_dir, name), time_1) 
             time_1, time_2, label, situation, num_changes = change(time_1)
 
             bg_color, building_color = give_random_colors()

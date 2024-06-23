@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt 
 from matplotlib.pyplot import rcParams
-rcParams['font.family'] = 'serif'
-rcParams['font.serif'] = ['DejaVu Serif']
+rcParams["font.family"] = "Times New Roman"
 
 colors = {
     "FC-EF": 'blue', 
@@ -19,11 +18,12 @@ custom_lines = [
     plt.Line2D([0], [0], color=colors["FC-Siam-Conc."], lw=2, label="_FC-Siam-conc."),
     plt.Line2D([0], [0], color=colors["FC-Siam-Diff."], lw=2, label="_FC-Siam-diff."),
     plt.Line2D([0], [0], color=colors["FC-LF"], lw=2, label="_FC-LF"),
+    plt.Line2D([0], [0], color='black', lw=2, label="_Ground Truth"),
     plt.Line2D([0], [0], color=colors["FC-EF-Val."], lw=2, linestyle='--', label="FC-EF-Val."),
     plt.Line2D([0], [0], color=colors["FC-Siam-Conc.-Val."], lw=2, linestyle='--', label="FC-Siam-Conc.-Val."),
     plt.Line2D([0], [0], color=colors["FC-Siam-Diff.-Val."], lw=2, linestyle='--', label="FC-Siam-Diff.-Val."),
-    plt.Line2D([0], [0], color=colors["FC-LF-Val."], lw=2, linestyle='--', label="FC-LF-Val."),
-    plt.Line2D([0], [0], color='black', lw=2, label="_Ground Truth")
+    plt.Line2D([0], [0], color=colors["FC-LF-Val."], lw=2, linestyle='--', label="FC-LF-Val.")
+    
 ]
 
 fig, ax = plt.subplots()
@@ -33,7 +33,7 @@ ax.axis('off')  # Hide the axis
 # Add the legend
 # Add the legend
 legend = ax.legend(custom_lines, 
-                   list(colors.keys())[:4]  + list(colors.keys())[4:] + ['Ground Truth'],  
+                   list(colors.keys())[:4] + ['Ground Truth'] + list(colors.keys())[4:] ,
                    loc='center', 
                    ncol=2)
 

@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd 
 import os 
 import ast
+import json
 
 def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_path=None):
     train_frame = pd.DataFrame.from_dict(train_metrics)
@@ -36,21 +37,34 @@ def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_pat
             
 def create_categorical_tables(categorical_metrics, model_name, save_path=None):
 
- 
-    filename_category = os.path.join(save_path, 'categorical_metrics.csv')
+    filename_category = os.path.join(save_path, 'categorical_metrics.json')
     
+    for key, value in categorical_metrics.items():
+        if isinstance(value, np.ndarray):
+            categorical_metrics[key] = value.tolist()
+
+    with open(filename_category, 'w') as f:
+        json.dump(categorical_metrics, f, indent=4)
+        
     
 
-    with open(filename_category, 'w', newline='') as csv_file:
-        fieldnames = categorical_metrics.keys()
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        data = [{field: value for field, value in zip(fieldnames, row)} for row in zip(*categorical_metrics.values())]
+def store_mean_difference(aggregate_category_metrics, experiment_name):
+    
+    data = []
+    
+    for model_name, categorical_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
+        gt = [item[0] for item in categorical_metrics['num_changes']]
+        pred = [item[1] for item in categorical_metrics['num_changes']]
+        data.append([model_name, np.mean(np.abs(np.subtract(gt, pred)))])
+    
+    
+    with open(os.path.join(experiment_name, 'mean_differences.csv'), 'w', newline='') as csv_file:
+        
+        writer = csv.writer(csv_file)
+        writer.writerow(['Model Name', 'Mean Absolute Difference'])  # Write the header
+        writer.writerows(data)
     
         
-        writer.writerows(data)
-
-
 
 
 def load_metrics(model_path):
@@ -112,23 +126,7 @@ def load_metrics(model_path):
     return train_list, val_list, test_list
 
 def load_categorical_metrics(model_path):
-    filename = os.path.join(model_path, 'tables', 'categorical_metrics.csv')
-
-
-    categorical_frame = pd.read_csv(filename, sep=',', encoding='utf-8')
-    
-    def convert_columns_to_float(df):
-        for column in df.columns:
-            if column != 'num_changes':  
-                df[column] = pd.to_numeric(df[column], errors='coerce')
-        return df
-    categorical_frame = convert_columns_to_float(categorical_frame)
-    
-    def parse_list_column(df, column_name):
-        df[column_name] = df[column_name].apply(ast.literal_eval)
-        return df
-    
-    categorical_frame = parse_list_column(categorical_frame, 'num_changes')
-    categorical_dict = categorical_frame.to_dict(orient='list')
-
-    return categorical_dict
+    with open(os.path.join(model_path,  'tables', 'categorical_metrics.json'), 'r') as f:
+        loaded_data_dict = json.load(f)
+        
+    return loaded_data_dict

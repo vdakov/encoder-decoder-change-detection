@@ -221,9 +221,11 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir):
 
     median= np.median(b_values)
     mad = median_abs_deviation(b_values)
+    
 
     filtered_num_changes = [item if abs(item[1] - median) <= 3 * mad else [item[0], 0] for item in categorical_metrics['num_changes']]
     categorical_metrics['num_changes'] = filtered_num_changes
+    
 
     return categorical_metrics
 

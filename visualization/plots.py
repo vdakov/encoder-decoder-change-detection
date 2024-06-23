@@ -5,13 +5,13 @@ import numpy as np
 
 from matplotlib import rcParams
 rcParams['font.family'] = 'serif'
-rcParams['font.serif'] = ['DejaVu Serif']
-rcParams['font.size'] = 24  # You can change this to the desired font size
+rcParams["font.family"] = "Times New Roman"
 rcParams['font.weight'] = 'bold'
 rcParams['axes.titlesize'] = 18  # Title font size
 rcParams['axes.labelsize'] = 24  # Axis label font size
-rcParams['xtick.labelsize'] = 24  # X tick label font size
-rcParams['ytick.labelsize'] = 12  # Y tick label font size
+rcParams['xtick.labelsize'] = 20  # X tick label font size
+rcParams['ytick.labelsize'] = 20  # Y tick label font size
+
 
 
 
@@ -73,6 +73,7 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
     axs[2].set_xlabel('Epochs')
     axs[2].set_ylabel('Score')
     # axs[2].legend()
+    plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
 
     if save_path:
         os.makedirs(save_path, exist_ok=True)
@@ -80,6 +81,8 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
 
 
         plt.savefig(os.path.join(save_path, model_name, 'loss-accuracy-precision.png'))
+        
+    
 
     # plt.show()
 
@@ -168,6 +171,19 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
     elif dataset_name == "HRSCD":
         titles = {"No information" : "No information" , "Artificial surfaces" : "Artificial surfaces",
                   "Agricultural areas": "Agricultural areas", "Forests" : "Forests", "Wetlands" : "Wetlands", "Water": "Water"}
+    elif dataset_name == "HIUCD":
+        titles = {
+            "Unlabeled": "Unlabeled",
+            "Water": "Water",
+            "Grass": "Grass",
+            "Building": "Building",
+            "Green house": "Green house",
+            "Road": "Road",
+            "Bridge": "Bridge",
+            "Others": "Others",
+            "Bare land": "Bare land",
+            "Woodland": "Woodland"
+        }
     
     for i, c in enumerate(list(aggregate_category_metrics[0].keys())[:-1]):
         
@@ -224,7 +240,7 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
 
     # fig.legend(custom_lines, list(colors.keys()), loc='upper left')
     plt.tight_layout()
-    # plt.subplots_adjust(left=0.05, right=0.05, top=0.05, bottom=0.05)
+    plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95)
 
         
     if save_path:
@@ -246,20 +262,28 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
 
     for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
 
-
         values = category_metrics['num_changes']
         ground_truth = [item[0] for item in values]
         predictions = [item[1] for item in values]
+        
+        plt.scatter(predictions, ground_truth, c=colors[model_name], label=model_name, alpha=0.4, edgecolors='w', s=100, marker=markers[model_name])
+        
+    for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
+        values = category_metrics['num_changes']
+        ground_truth = [item[0] for item in values]
+        
         if not gt_label_added:
-            plt.scatter(ground_truth, ground_truth, c='black', label='GT', alpha=0.6, edgecolors='w', s=100, marker='x')
+            plt.scatter(ground_truth, ground_truth, c='black', label='GT', edgecolors='w', s=100, marker='x')
             gt_label_added = True
         else:
-            plt.scatter(ground_truth, ground_truth, c='black', alpha=0.6, edgecolors='w', s=100, marker='x')
+            plt.scatter(ground_truth, ground_truth, c='black', edgecolors='w', s=100, marker='x')
         
-        plt.scatter(predictions, ground_truth, c=colors[model_name], label=model_name, alpha=0.6, edgecolors='w', s=100, marker=markers[model_name])
+        
         
     plt.xlabel('# Predicted Changes')
     plt.ylabel('# Actual Changes')
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
     # plt.title(plot_name, weight='bold')
     # plt.legend()
 

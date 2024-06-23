@@ -42,4 +42,9 @@ gt = np.where(gt < 2, 0, 255).astype(np.uint8)
 cv2.imshow('A', A) 
 cv2.imshow('B', B) 
 cv2.imshow('0', gt) 
+
+cv2.imwrite('A.png', A)
+cv2.imwrite('B.png', B)
+cv2.imwrite('gt.png', gt)
+
 cv2.waitKey()   
