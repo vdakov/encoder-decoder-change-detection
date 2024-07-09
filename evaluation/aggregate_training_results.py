@@ -2,8 +2,13 @@ import numpy as np
 import csv 
 import matplotlib.pyplot as plt 
 import os 
-
 from matplotlib import rcParams
+
+###########################
+# Functions meant to aggregate dictionaries of evaluation metrics. As we are interested in looking at all architecture 
+# performances on the same plot, we want to be apble to plot them as such.
+###########################
+
 rcParams["font.family"] = "Times New Roman"
 rcParams['font.size'] = 24  # You can change this to the desired font size
 rcParams['font.weight'] = 'bold'
@@ -17,7 +22,7 @@ rcParams['ytick.labelsize'] = 24  # Y tick label font size
 
 
 
-
+# Function meant to aggregate the loss 
 def plot_loss(experiment_name, fusions, colors):
     path = os.path.join('experiment_results', experiment_name)
     plt.figure(figsize=(8, 5))

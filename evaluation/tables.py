@@ -5,7 +5,16 @@ import os
 import ast
 import json
 
-def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_path=None):
+
+#########
+# Functions exporting all results as .csv and .tex files for easy addition to scientific reports. For a
+# all of them a provided save_path is preferably assumed, and stored per fusion architecture. The tables are per train, 
+# test and validation dataset. 
+#########
+
+def create_tables(train_metrics, val_metrics, test_metrics, save_path=""):
+    '''
+    '''
     train_frame = pd.DataFrame.from_dict(train_metrics)
     val_frame = pd.DataFrame.from_dict(val_metrics)
     test_frame = pd.DataFrame.from_dict(test_metrics, orient='index')
@@ -25,7 +34,6 @@ def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_pat
         val_filename_tex = os.path.join(save_path, 'val_metrics.tex')
         test_filename_tex = os.path.join(save_path, 'test_metrics.tex')
 
-        # Save as LaTeX
         with open(train_filename_tex, 'w', encoding='utf-8') as f:
             f.write(train_frame.to_latex(index=False))
 
@@ -35,7 +43,13 @@ def create_tables(train_metrics, val_metrics, test_metrics, model_name, save_pat
         with open(test_filename_tex, 'w', encoding='utf-8') as f:
             f.write(test_frame.to_latex(index=False))
             
-def create_categorical_tables(categorical_metrics, model_name, save_path=None):
+def create_categorical_tables(categorical_metrics, save_path=None):
+    '''
+    Once we have the categorical metrics, we can use this function to store them as a JSON. It is 
+    picked as an alternative format to CSV due to its better compatibility with the "number of changes" metric
+    predicted. 
+    
+    '''
 
     filename_category = os.path.join(save_path, 'categorical_metrics.json')
     
@@ -47,8 +61,12 @@ def create_categorical_tables(categorical_metrics, model_name, save_path=None):
         json.dump(categorical_metrics, f, indent=4)
         
     
-
-def store_mean_difference(aggregate_category_metrics, experiment_name):
+def store_mean_difference_per_epoch(aggregate_category_metrics, experiment_name):
+    '''
+    Function to calculate the mean differences between the number of changes, estimated by the model, per both fusion architecture (hardcoded)
+    and for each epoch. 
+    
+    '''
     
     data = []
     
@@ -68,6 +86,12 @@ def store_mean_difference(aggregate_category_metrics, experiment_name):
 
 
 def load_metrics(model_path):
+    '''
+    Function used to reload the training metrics on a trained model. Assumes a given path.
+    Useful if the visualization functions have changed, and the model itself does not need
+    retraining. 
+    
+    '''
     train_filename = os.path.join(model_path, 'tables', 'train_metrics.csv')
     val_filename = os.path.join(model_path, 'tables', 'val_metrics.csv')
     test_filename = os.path.join(model_path, 'tables', 'test_metrics.csv')
@@ -125,7 +149,14 @@ def load_metrics(model_path):
             
     return train_list, val_list, test_list
 
+
+
 def load_categorical_metrics(model_path):
+    '''
+    Reloading function for when we have a trained neural network and simply want to reevaluate the model categorically. 
+    Useful if the figures have been reworked or the evaluation.
+    
+    '''
     with open(os.path.join(model_path,  'tables', 'categorical_metrics.json'), 'r') as f:
         loaded_data_dict = json.load(f)
         

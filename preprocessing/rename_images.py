@@ -1,8 +1,11 @@
-
-
-
-
 import os
+
+# ===============================================================
+# As none of the datasets I found for change detection, I had to find some way to standardize 
+# the dataset files. This script is mean to equalize the file structure. Feel free to restructure it for the 
+# data structure of any of your datasets.
+# ===============================================================
+
 
 # os.chdir(os.path.join( '..', 'data', 'HRSCD', 'labels_land_cover_B'))
 

@@ -23,7 +23,7 @@ from data_examination import examine_subset
 from hrscd_dataset_loader import HRSCD_Dataset
 from levir_dataset_loader import LEVIR_Dataset
 from metrics import evaluate_categories, evaluate_net_predictions
-from plots import aggregate_category_histograms, category_histograms, compare_number_of_buildings, create_figures
+from plots import aggregate_category_histograms, category_histograms, compare_number_of_buildings, create_loss_accuracy_figures
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
 from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics, store_mean_difference
@@ -98,7 +98,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             create_tables(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'tables'))
 
         
-        create_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
+        create_loss_accuracy_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
         examine_subset(net, net_name, test_dataset, 3, device, os.path.join(model_path, 'figures'))
         
         if dataset_name == "CSCD" and generate_plots:

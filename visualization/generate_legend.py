@@ -1,5 +1,14 @@
 import matplotlib.pyplot as plt 
 from matplotlib.pyplot import rcParams
+
+
+# ===============================================================
+# Script meant to create a legend figure for the original paper. To reduce the visual clutter in the 
+# original bachelor thesis paper (see the README), I made one large figure for all fusion architectures
+# and a shared legend with a consistent color scheme. 
+# ===============================================================
+
+
 rcParams["font.family"] = "Times New Roman"
 
 colors = {

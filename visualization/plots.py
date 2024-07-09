@@ -2,8 +2,14 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import numpy as np
-
 from matplotlib import rcParams
+
+# ===========================
+# Functions used for various plots and figures throughout the experiment. All of them are set to 
+# have the same font and color scheme. Feel free to extend it. 
+# ===========================
+
+
 rcParams['font.family'] = 'serif'
 rcParams["font.family"] = "Times New Roman"
 rcParams['font.weight'] = 'bold'
@@ -15,10 +21,9 @@ rcParams['ytick.labelsize'] = 20  # Y tick label font size
 
 
 
-def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_path = None):
+def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model_name, save_path = None):
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
     
-
 
     train_loss = extract_metric(train_metrics, 'net_loss')
     val_loss = extract_metric(val_metrics, 'net_loss')
@@ -51,18 +56,12 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
     axs[0].axhline(y=test_loss, color='red', linestyle='--', label='Test')
     axs[0].set_xlabel('Epochs')
     axs[0].set_ylabel('Loss')
-    # axs[0].legend()
 
-    # Plot accuracy curves
     axs[1].plot(train_accuracy, label='Train', c='blue')
     axs[1].plot(val_accuracy, label='Validation', c='orange')
     axs[1].axhline(y=test_accuracy, color='red', linestyle='--', label='Test')
     axs[1].set_xlabel('Epochs')
     axs[1].set_ylabel('Accuracy')
-    # axs[1].legend()
-
-
-
 
     axs[2].plot(train_f1, label='Train F1')
     axs[2].plot(val_f1, label='Validation F1')
@@ -72,7 +71,7 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
     axs[2].set_title('Precision, Recall, and F1 Curve')
     axs[2].set_xlabel('Epochs')
     axs[2].set_ylabel('Score')
-    # axs[2].legend()
+
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
 
     if save_path:
@@ -82,73 +81,11 @@ def create_figures(train_metrics, val_metrics, test_metrics, model_name, save_pa
 
         plt.savefig(os.path.join(save_path, model_name, 'loss-accuracy-precision.png'))
         
-    
-
-    # plt.show()
 
 
 def extract_metric(metric_list, key):
     return [item[key] for item in metric_list]
 
-
-
-def category_histograms(model_name, plot_name, category_metrics, save_path=None):
-    width_ratios = np.ones(len(category_metrics.keys()))
-    width_ratios[-1] = 3
-
-    fig, ax = plt.subplots(1, len(category_metrics.keys()), figsize=(21, 5), width_ratios=width_ratios)
-
-    metrics = ['tp', 'fp', 'tn', 'fn']
-    
-
-    for i, c in enumerate(list(category_metrics.keys())[:-1]):
-        
-        tp = category_metrics[c][0]
-        fp = category_metrics[c][1]
-        tn = category_metrics[c][2]
-        fn = category_metrics[c][3]
-        precision = tp  / (tp + fp + 1e-10)
-        recall = tp / (tp + fn+ 1e-10)
-        f1 = (2 * precision * recall) / (precision + recall+ 1e-10)
-
-        legend_labels = [
-            f'Precision: {precision:.2f}',
-            f'Recall: {recall:.2f}',
-            f'F1 Score: {f1:.2f}'
-        ]
-        ax[i].set_ylim(0, 2000)
-        # Create custom legend entries
-        custom_lines = [plt.Line2D([0], [0], color='red', lw=2),
-                        plt.Line2D([0], [0], color='orange', lw=2),
-                        plt.Line2D([0], [0], color='purple', lw=2)]
-        
-        # ax[i].legend(custom_lines, legend_labels, loc='upper right')
-        ax[i].bar(metrics, category_metrics[c])
-        ax[i].set_title(c)
-
-
-    fig.suptitle(plot_name + "-" + model_name)
-    
-    values = category_metrics['num_changes']
-    ground_truth = [item[0] for item in values]
-    predictions = [item[1] for item in values]
-    avg_diff = np.mean([np.abs(item[0] - item[1]) for item in values])
-    
-    
-    markerline_gt, stemlines_gt, baseline_gt = ax[-1].stem(np.arange(len(ground_truth)), ground_truth, linefmt='orange', markerfmt='o', basefmt=' ', label = 'Ground Truth', use_line_collection=True)
-    plt.setp(markerline_gt, 'markersize', 5)
-    plt.setp(stemlines_gt, 'alpha', 0.7)
-    ax[-1].stem(np.arange(len(predictions)), predictions, linefmt='blue', markerfmt='bo', basefmt=' ', label='Prediction', use_line_collection=True)
-    ax[-1].axhline(y=avg_diff, color='red', linestyle='solid', label=f'Mean Diff: {avg_diff:.2f}')
-    ax[-1].axhline(y=np.mean(ground_truth), color='purple', linestyle='--', label=f'Mean GT: {np.mean(ground_truth):.2f}')
-    ax[-1].axhline(y=np.mean(predictions), color='cyan', linestyle='--', label=f'Mean Pred: {np.mean(predictions):.2f}')
-    ax[-1].legend()
-    ax[-1].set_title("Number of Changes Per Image")
-    
-    
-    if save_path:
-        plt.savefig(os.path.join(save_path, 'categorical.png'))
-    plt.show()
 
 def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_metrics, save_path=None):
   
@@ -160,7 +97,7 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
     num_rows = 2
 
     fig, axes = plt.subplots(num_rows, num_cols, figsize=(15, 5 * num_rows))
-    # fig.suptitle(plot_name, weight = 'bold')
+    
     metrics = ['TP', 'FP', 'TN', 'FN']
     
     results = []
@@ -224,21 +161,10 @@ def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_me
                 'f1_score': f1
             })
             
-    #hide unused plots     
     for i in range(num_categories, num_rows * num_cols):
         fig.delaxes(axes.flat[i]) 
-            
-           
-           
                 
-    custom_lines = [
-        plt.Line2D([0], [0], color=colors["Early"], lw=2, label="_Early"),
-        plt.Line2D([0], [0], color=colors["Mid-Conc."], lw=2, label="_Mid-Conc."),
-        plt.Line2D([0], [0], color=colors["Mid-Diff."], lw=2, label="_Mid-Diff."),
-        plt.Line2D([0], [0], color=colors["Late"], lw=2, label="_Late")
-    ]
 
-    # fig.legend(custom_lines, list(colors.keys()), loc='upper left')
     plt.tight_layout()
     plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95)
 
@@ -284,8 +210,6 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
     plt.ylabel('# Actual Changes')
     plt.tight_layout()
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
-    # plt.title(plot_name, weight='bold')
-    # plt.legend()
 
     if save_path:
         os.makedirs(os.path.join(save_path), exist_ok=True)

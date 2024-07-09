@@ -1,4 +1,3 @@
-
 import torch
 from torch.autograd import Variable
 from tqdm import tqdm as tqdm
@@ -6,12 +5,8 @@ import numpy as np
 import cv2
 from scipy.stats import median_abs_deviation
 
-IOU_THRESHOLD = 0.5
 
-
-
-
-def evaluate_net_predictions(net, criterion, dataset):
+def evaluate_net_predictions(net, criterion, dataset, IOU_THRESHOLD=0.5):
     net.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -102,13 +97,12 @@ def map_to_categorical(img):
 
     value_to_position = {value: index for index, value in enumerate(vals)}
 
-    # Assumes img is one dimensional
     positions = np.vectorize(value_to_position.get)(np.ndarray.flatten(img))
 
     return positions.reshape(img.shape)
 
 
-def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories, dataset_name):
+def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories, dataset_name, IOU_THRESHOLD=0.5):
 
 
     out = {c: [0, 0, 0, 0] for c in categories}
@@ -143,20 +137,17 @@ def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories, da
 
         if iou >= IOU_THRESHOLD:
             out[c] = [1, 0, 0, 0] #tp
-        elif iou < IOU_THRESHOLD and prediction_made:
-            
+        elif iou < IOU_THRESHOLD and prediction_made:      
             out[c] = [0, 1, 0, 0] #fp
         elif (not prediction_made) and no_object:
             out[c] = [0, 0, 1, 0] #tn
         elif iou == 0 and (not no_object):
             out[c] = [0, 0, 0, 1]  #fn
             
-
-
     return out
 
 
-def evaluate_categories(net, dataset_name, dataset, categories, save_dir):
+def evaluate_categories(net, dataset_name, dataset, categories, save_dir, IOU_THRESHOLD=0.5):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -185,7 +176,7 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir):
             categorical = map_to_categorical(categorical)
         else:
             I1, I2, cm, _, num_changes = dataset.get_img(img_index)
-            # print('Not a categorical dataset')
+            print('Not a categorical dataset')
             
 
 
