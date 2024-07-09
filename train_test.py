@@ -7,7 +7,13 @@ import time
 import numpy as np
 
 def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_epochs = 10, save = True, save_dir=f'{time.time()}.pth.tar', skip_val = True, early_stopping = True):
-
+    '''
+    The current training and validation loop used for the experiment. Here all major hyperparameters and machine learning 
+    methods have been employed. They include: 
+        - Adam Optimizer
+        - Exponential Learning Rate Scheduler 
+        - Early Stopping 
+    '''
     optimizer = torch.optim.Adam(net.parameters(), weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
     train_metrics = []
@@ -20,7 +26,6 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
 
     for epoch in range(n_epochs):
         net.train()
-        cumulative_metrics = {metric: 0 for metric in ['net_loss', 'net_accuracy', 'precision', 'recall']}
 
         with tqdm(total=len(train_loader), desc=f'Epoch {epoch+1}/{n_epochs}', unit='batch') as pbar:
             for batch in train_loader:

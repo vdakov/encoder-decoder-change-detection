@@ -6,6 +6,11 @@ from rasterio.plot import show
 import rasterio
 
 
+#================================
+# For the purposes of our study, some images were far too large (e.g. the ones in LEVIR). These functions form a script
+# meant to downsample the images into smaller ones, while preserving as much detail as possible and clearing them up for 
+# interpolation artifacts. 
+#================================
 
 
 def get_args():
@@ -31,10 +36,6 @@ def resize_aspect_fit(path, resize_ratio):
         
             with rasterio.open(item_path) as src:
                 img = src.read()
-
-            
-
-            
 
             
             new_image_width = int(img.shape[1] * resize_ratio)
@@ -67,11 +68,11 @@ if __name__ == "__main__":
     
     resize_ratio = 0.25
 
-    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "A"), resize_ratio)
-    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "B"), resize_ratio)
-    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "labels"), resize_ratio)
-    resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "labels_land_cover_A"), resize_ratio)
-    resize_aspect_fit(os.path.join(     "..", "data", "HRSCD", "labels_land_cover_B"), resize_ratio)
+    # resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "A"), resize_ratio)
+    # resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "B"), resize_ratio)
+    # resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "labels"), resize_ratio)
+    # resize_aspect_fit(os.path.join( "..", "data", "HRSCD", "labels_land_cover_A"), resize_ratio)
+    # resize_aspect_fit(os.path.join(     "..", "data", "HRSCD", "labels_land_cover_B"), resize_ratio)
 
 
 

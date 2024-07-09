@@ -5,11 +5,11 @@ import sys
 
 
 sys.path.insert(1, 'siamese_fcn')
-sys.path.insert(1, 'datasets')
+sys.path.insert(1, 'pytorch_datasets')
 sys.path.insert(1, 'evaluation')
 sys.path.insert(1, 'results')
 sys.path.insert(1, 'visualization')
-sys.path.insert(1, 'util')
+sys.path.insert(1, 'preprocessing')
 
 
 import os
@@ -55,6 +55,10 @@ fusions = ["Early", "Middle-Conc", "Middle-Diff", "Late"]
 
 
 def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, criterion, epochs, restore_prev=False, generate_plots=False):
+    '''
+    A full experiment, running all four fusion architectures (so far) on a dataset with given hyperparameters. It can be set to restore the weights 
+    from a previous experiment. 
+    '''
     net, net_name = None, None 
     experiment_path = os.path.join('experiment_results', experiment_name)
     os.makedirs(experiment_path, exist_ok=True)
@@ -63,6 +67,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     train_set_loader, val_set_loader, test_set_loader = dataset_loaders
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+ 
     aggregate_categorical = []
     colors = {"Early": 'blue', "Middle-Conc": 'orange', "Middle-Diff": 'lime', "Late": 'red'}
     
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     generate_plots = args.generate_plots
     
-
+    torch.manual_seed(42)
 
     train_dataset = get_dataset(dataset_name, directory, "train", FP_MODIFIER)
     val_dataset = get_dataset(dataset_name, directory, "val", FP_MODIFIER)
@@ -174,9 +179,9 @@ if __name__ == "__main__":
     weights = torch.FloatTensor(train_dataset.weights).to(device)
     criterion = nn.NLLLoss(weight=weights)
 
-    train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
-    test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
-    val_loader = DataLoader(val_dataset, batch_size = batch_size, shuffle = True, num_workers = 4)
+    train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, num_workers = 1)
+    test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = True, num_workers = 1)
+    val_loader = DataLoader(val_dataset, batch_size = batch_size, shuffle = True, num_workers = 1)
 
     run_experiment(experiment_name, dataset_name, [train_dataset, val_dataset, test_dataset], 
                    [train_loader, val_loader, test_loader], criterion, n_epochs,

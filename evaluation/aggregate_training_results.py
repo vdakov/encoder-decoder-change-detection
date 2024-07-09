@@ -22,16 +22,19 @@ rcParams['ytick.labelsize'] = 24  # Y tick label font size
 
 
 
-# Function meant to aggregate the loss 
+
 def plot_loss(experiment_name, fusions, colors):
+    '''
+    Produces an aggregated loss plot from existing CSV files. I know the structure is weird, but
+    it avoids cluttering the code with other things while in the time constraints of the project. 
+    '''
     path = os.path.join('experiment_results', experiment_name)
     plt.figure(figsize=(8, 5))
     
 
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    
-    # plt.ylim([0, m])
+
 
     for f in fusions:
         dir = f + "-" + experiment_name 
@@ -51,8 +54,6 @@ def plot_loss(experiment_name, fusions, colors):
             for row in reader:
                 validation_results.append(float(row['net_loss']))
             plt.plot(np.arange(len(validation_results)), validation_results, label=f'{f}-Val.', color=colors[f], linestyle='dashed')
-    
-    # plt.title('Loss', weight='bold')
     
     plt.tight_layout()
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)

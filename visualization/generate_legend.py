@@ -41,15 +41,15 @@ ax.axis('off')  # Hide the axis
 
 # Add the legend
 # Add the legend
-# legend = ax.legend(custom_lines, 
-#                    list(colors.keys())[:4] + ['Ground Truth'] + list(colors.keys())[4:] ,
-#                    loc='center', 
-#                    ncol=2)
-
 legend = ax.legend(custom_lines, 
-                   list(colors.keys())[:4] + ['Ground Truth'] ,
+                   list(colors.keys())[:4] + ['Ground Truth'] + list(colors.keys())[4:] ,
                    loc='center', 
-                   ncol=1)
+                   ncol=2)
+
+# legend = ax.legend(custom_lines, 
+#                    list(colors.keys())[:4] + ['Ground Truth'] ,
+#                    loc='center', 
+#                    ncol=1)
 
 
 # Adjust the figure size to fit the legend

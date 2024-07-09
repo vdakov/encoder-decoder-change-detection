@@ -14,6 +14,7 @@ import json
 
 def create_tables(train_metrics, val_metrics, test_metrics, save_path=""):
     '''
+    Exports the metrics disctionaries into CSVs. 
     '''
     train_frame = pd.DataFrame.from_dict(train_metrics)
     val_frame = pd.DataFrame.from_dict(val_metrics)

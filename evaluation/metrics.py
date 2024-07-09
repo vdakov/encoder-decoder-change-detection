@@ -7,6 +7,7 @@ from scipy.stats import median_abs_deviation
 
 
 def evaluate_net_predictions(net, criterion, dataset, IOU_THRESHOLD=0.5):
+    '''A non-categorical evaluation that evaluates the accuracy of a neural networ as is. '''
     net.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -78,6 +79,9 @@ def evaluate_net_predictions(net, criterion, dataset, IOU_THRESHOLD=0.5):
             "f1": f1}
 
 def cluster_image_colors(img, dataset_name, categories):
+    ''''
+    The image cagteogories are numbers betweeen 0 and 255. We can map them to colors for each category if we 
+    map appropriate increasing colors to them.'''
     if dataset_name == 'HRSCD':
         Z = img.reshape((-1,3))
         Z = np.float32(Z)
@@ -93,6 +97,8 @@ def cluster_image_colors(img, dataset_name, categories):
     return out
 
 def map_to_categorical(img):
+    '''
+    The categorical mages are based on the indices within them. Also indexes each category.'''
     vals = np.sort(np.unique(img))
 
     value_to_position = {value: index for index, value in enumerate(vals)}
@@ -103,6 +109,9 @@ def map_to_categorical(img):
 
 
 def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories, dataset_name, IOU_THRESHOLD=0.5):
+    ''''
+    Utility funcion to get all images equally evaluated in the categorical loop.
+    '''
 
 
     out = {c: [0, 0, 0, 0] for c in categories}
@@ -148,9 +157,11 @@ def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories, da
 
 
 def evaluate_categories(net, dataset_name, dataset, categories, save_dir, IOU_THRESHOLD=0.5):
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
+    '''
+    Functional evaluation of all images within the dataset for the given fusion category.
+    '''
 
     categorical_metrics = {}
 

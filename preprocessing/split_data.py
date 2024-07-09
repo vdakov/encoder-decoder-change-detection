@@ -3,6 +3,11 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 
+#==================
+# Script to split some of the datsets into a training, test and validation datasets. Set with the same random seed 
+# for reproducible results. 
+#==================
+
 
 def get_args():
     parser = argparse.ArgumentParser()
