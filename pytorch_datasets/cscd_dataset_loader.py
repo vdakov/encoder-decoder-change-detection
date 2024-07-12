@@ -6,20 +6,18 @@ sys.path.insert(1, '../evaluation')
 sys.path.insert(1, '../results')
 sys.path.insert(1, '../visualization')
 sys.path.insert(1, '..')
-sys.path.insert(1, '../util')
+sys.path.insert(1, '../preprocessing')
 
 
 from torch.utils.data import Dataset
 import os
-from preprocess_util import reshape_for_torch
+from reshape import reshape_for_torch
 import numpy as np
 from tqdm import tqdm as tqdm
 import cv2
 import os
-from math import ceil
 import csv
 import torch
-
 
 
 class CSCD_Dataset(Dataset):
@@ -55,7 +53,6 @@ class CSCD_Dataset(Dataset):
             img_name = set_name + "-" + name
             self.names.append(img_name)
             a = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name,"A", name)))
-
             b = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name, "B", name)))
             label = cv2.imread(os.path.join(dirname, set_name, "label", name), cv2.IMREAD_GRAYSCALE)
             label = (label - np.min(label)) / (np.ptp(label)) if np.ptp(label) != 0 else np.zeros_like(label)
