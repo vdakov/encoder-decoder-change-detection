@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import torch
 from torch.autograd import Variable
 from tqdm import tqdm as tqdm

@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 import os  
+from sklearn.cluster import KMeans
 
 
 def calculate_distances(dataset_name, ground_truth, predictions):
@@ -10,7 +11,7 @@ def calculate_distances(dataset_name, ground_truth, predictions):
     
     for img in ground_truth:
         contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        # distances = []
+        distances = []
         for cnt in contours:
             M1 = cv2.moments(cnt)
             if M1['m00'] == 0:
@@ -19,7 +20,7 @@ def calculate_distances(dataset_name, ground_truth, predictions):
             cx1 = M1['m10'] / M1['m00']
             cy1 = M1['m01'] / M1['m00']
         
-            # distances_point = []
+            distances_point = []
             area = cv2.contourArea(cnt)
             for cnt2 in contours:
                 if cnt is cnt2:
@@ -31,14 +32,17 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                 cx2 = int(M2['m10']/M2['m00'])
                 cy2 = int(M2['m01']/M2['m00'])
                 d = calculate_distance_two_points(cx1, cy1, cx2, cy2, area)
-                ground_truth_distances.append(d)
+                distances_point.append(d)
+            
+            distances_point = np.array(distances_point)
+            distances.append(np.sum(distances_point))
+            
+        if len(contours) > 0:
+            
+            distances = np.array(distances)
+            ground_truth_distances.append(np.mean(distances))
             
 
-                
-            # distances.append(np.mean(distances_point))
-            
-        # ground_truth_distances.append(np.mean(distances))
-            
                 
                 
                 
@@ -62,9 +66,18 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                     M2 = cv2.moments(cnt2)
                     
                     cx2 = int(M2['m10']/M2['m00'])
-                    cy2= int(M2['m01']/M2['m00'])
+                    cy2 = int(M2['m01']/M2['m00'])
                     d = calculate_distance_two_points(cx1, cy1, cx2, cy2, area)
-                    predictions_distances[k].append(d)
+                    distances_point.append(d)
+                    
+                distances_point = np.array(distances_point)
+                distances.append(np.sum(distances_point))
+            
+                
+            if len(contours) > 0:    
+                distances = np.array(distances)
+                predictions_distances[k].append(np.mean(distances))
+        
 
     
     return ground_truth_distances, predictions_distances
@@ -73,14 +86,63 @@ def calculate_distance_two_points(x1, y1, x2, y2, area):
     a = np.array((x1, y1))
     b = np.array((x2, y2))
     
-    return np.linalg.norm(a - b)
+    beta = 0.05 
+    
+    return area / np.exp(beta * np.linalg.norm(a - b)) 
 
 
-gt_images = [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label'))] 
-gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label'))] 
-gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label'))] 
-gt_distances, _ = calculate_distances('LEVIR', gt_images, {})
-plt.hist(gt_distances, bins = 100)
-plt.show()
+def plot_spread_histogram(dataset_name, distances):
+    q25, q75 = np.percentile(distances, [25, 75])
+    iqr = q75 - q25
+    bin_width = 2 * iqr / np.cbrt(len(distances))
+    freedman_diaconis_bins = int(np.ceil((max(distances) - min(distances)) / bin_width))
+    num_bins = freedman_diaconis_bins
+    
+    
+    plt.hist(distances, bins = num_bins)
+    plt.show()
+    
+def cluster_and_plot_clusters(distances, images):
+    label = KMeans(n_clusters=2, random_state=0, n_init="auto").fit_predict(np.array(distances).reshape(-1,1))
+    label = np.array(label)
+    gt_distances = np.array(gt_distances)
+    a = gt_distances[np.where(label == 0)]
+    b = gt_distances[np.where(label == 1)]
+
+    plt.scatter(a, np.zeros_like(a), color = 'blue')
+    plt.scatter(b, np.zeros_like(b), color = 'orange') 
+    plt.show()
+
+    a_indices = np.where(label == 0)[0]
+    b_indices = np.where(label == 1)[0]
 
 
+    display_images([images[i] for i in a_indices], "Cluster 0 Images")
+    display_images([images[i] for i in b_indices], "Cluster 1 Images")
+
+
+
+
+
+
+
+def display_images(images, title):
+    plt.figure(figsize=(20, 10))
+    cols = 5
+    rows = min(len(images) // cols + 1, 5)
+    for i, img in enumerate(images):
+        if i >= rows * cols:
+            break
+        print(rows, cols, i)
+        plt.subplot(rows, cols, i + 1)
+        plt.imshow(img, cmap='gray')
+        plt.axis('off')
+    plt.suptitle(title)
+    plt.show()
+
+
+
+# gt_images = [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label'))] 
+# gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label'))] 
+# gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label'))] 
+# gt_distances, _ = calculate_distances('LEVIR', gt_images, {})аз
