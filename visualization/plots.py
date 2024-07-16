@@ -215,6 +215,22 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
     
     plt.show()
     
+
+
+def plot_comparison_histogram(dataset_name, gt_sizes, predictions_sizes, save_path):
+    q25, q75 = np.percentile(predictions_sizes, [25, 75])
+    iqr = q75 - q25
+
+    bin_width = 2 * iqr / np.cbrt(len(predictions_sizes))
+    freedman_diaconis_bins = int(np.ceil((max(max(gt_sizes), max(predictions_sizes)) - min(min(gt_sizes), min(predictions_sizes))) / bin_width))
+    num_bins = freedman_diaconis_bins
+    plt.hist(gt_sizes, bins = num_bins, color = 'black', alpha=0.5)
+    plt.hist(predictions_sizes, bins = num_bins, color = 'blue', alpha=0.5)
+    plt.savefig(save_path)
+    plt.show()
+    
+
+    
     
 
         

@@ -157,27 +157,16 @@ def evaluate_img_categorically(y, y_hat, num_changes, y_category, categories, da
     return out
 
 
-def evaluate_categories(net, dataset_name, dataset, categories, save_dir, IOU_THRESHOLD=0.5):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net.to(device)
-    '''
-    Functional evaluation of all images within the dataset for the given fusion category.
-    '''
 
+def evaluate_categories(dataset_name, dataset, predictions, categories, IOU_THRESHOLD=0.5):
     categorical_metrics = {}
 
     for c in categories:
         categorical_metrics[c] = [0, 0, 0, 0] #tp, fp, tn,  fn
 
     categorical_metrics['num_changes'] = []
-
-    index = 0
-    num_changes = 0
     
-
-    for img_index in dataset.names:
-        index += 1
-
+    for img_index, predicted in zip(dataset.names, predictions):
         if dataset_name == "CSCD":
             I1, I2, cm, situation, num_changes = dataset.get_img(img_index)
             categorical = np.multiply(cm, categories.index(situation) + 1)
@@ -190,26 +179,12 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir, IOU_TH
             I1, I2, cm, _, num_changes = dataset.get_img(img_index)
             print('Not a categorical dataset')
             
-
-
-        I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
-        I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-
-        cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm),0).long().to(device))
-
-
-        output = net(I1, I2).float().to(device)
-
-
-        predicted = np.exp(np.squeeze(output.cpu().detach().numpy())[1])
         cm = np.squeeze(cm.cpu().detach().numpy())
-        cm = np.zeros_like(cm) if np.max(cm) == np.min(cm) else (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
-        predicted = np.where(predicted < 0.5, 0, 1)
-        
+        cm = np.zeros_like(cm) if np.max(cm) == np.min(cm) else (cm - np.min(cm)) / (np.max(cm) - np.min(cm))     
         cm = np.where(cm < 0.5, 0, 1)
-
+        
         if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD" :
-            curr_metrics = evaluate_img_categorically(cm, predicted, num_changes, categorical, categories, dataset_name)
+            curr_metrics = evaluate_img_categorically(cm, predicted, num_changes, categorical, categories, dataset_name, IOU_THRESHOLD=IOU_THRESHOLD)
 
             for c in categories:
                 categorical_metrics[c] = np.add(categorical_metrics[c], curr_metrics[c])
@@ -233,3 +208,34 @@ def evaluate_categories(net, dataset_name, dataset, categories, save_dir, IOU_TH
     return categorical_metrics
 
 
+def get_ground_truth(dataset):
+    ground_truth = []
+    for img_index in dataset.names:
+        _, _, cm, _, _ = dataset.get_img(img_index)
+        cm = np.zeros_like(cm) if np.max(cm) == np.min(cm) else (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
+        cm = np.where(cm < 0.5, 0, 1)
+        ground_truth.append(cm)
+                
+    return ground_truth 
+
+
+
+def get_predictions(net, dataset):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net.to(device)
+    predictions = []
+    
+    for img_index in dataset.names:
+        I1, I2, _, _, _ = dataset.get_img(img_index)
+        I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
+        I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
+        
+        output = net(I1, I2).float().to(device)
+
+
+        predicted = np.exp(np.squeeze(output.cpu().detach().numpy())[1])
+        predicted = np.where(predicted < 0.5, 0, 1)
+
+        predictions.append(predicted)
+                
+    return predictions 
