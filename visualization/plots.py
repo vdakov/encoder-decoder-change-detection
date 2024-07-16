@@ -76,10 +76,7 @@ def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model
 
     if save_path:
         os.makedirs(save_path, exist_ok=True)
-        os.makedirs(os.path.join(save_path, model_name), exist_ok=True)
-
-
-        plt.savefig(os.path.join(save_path, model_name, 'loss-accuracy-precision.png'))
+        plt.savefig(os.path.join(save_path, 'loss-accuracy-precision.png'))
         
 
 

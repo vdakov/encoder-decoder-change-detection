@@ -1,7 +1,7 @@
 import os
 
 # ===============================================================
-# As none of the datasets I found for change detection, I had to find some way to standardize 
+# As none of the datasets I found for change detection had a consistent file structure, I had to find some way to standardize 
 # the dataset files. This script is mean to equalize the file structure. Feel free to restructure it for the 
 # data structure of any of your datasets.
 # ===============================================================
