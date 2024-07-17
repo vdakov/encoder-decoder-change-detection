@@ -41,6 +41,8 @@ def calculate_distances(dataset_name, ground_truth, predictions):
             
             distances = np.array(distances)
             ground_truth_distances.append(np.mean(distances))
+        else: 
+            ground_truth_distances.append(0)
             
 
                 
@@ -48,14 +50,16 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                 
                 
     for k in predictions.keys():
-        
+        predictions_distances[k] = []
         for img in predictions[k]:
-            predictions_distances[k] = {}
+            
             contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             distances = []
             
             for cnt in contours:
                 M1 = cv2.moments(cnt)
+                if M1['m00'] == 0:
+                    continue
                 cx1 = M1['m10'] / M1['m00']
                 cy1 = M1['m01'] / M1['m00']
                 distances_point = []
@@ -64,7 +68,8 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                     if cnt is cnt2:
                         continue
                     M2 = cv2.moments(cnt2)
-                    
+                    if M2['m00'] == 0:
+                        continue
                     cx2 = int(M2['m10']/M2['m00'])
                     cy2 = int(M2['m01']/M2['m00'])
                     d = calculate_distance_two_points(cx1, cy1, cx2, cy2, area)
@@ -77,6 +82,8 @@ def calculate_distances(dataset_name, ground_truth, predictions):
             if len(contours) > 0:    
                 distances = np.array(distances)
                 predictions_distances[k].append(np.mean(distances))
+            else:
+                predictions_distances[k].append(0)
         
 
     
@@ -145,4 +152,4 @@ def display_images(images, title):
 # gt_images = [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label'))] 
 # gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label'))] 
 # gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label'))] 
-# gt_distances, _ = calculate_distances('LEVIR', gt_images, {})аз
+# gt_distances, _ = calculate_distances('LEVIR', gt_images, {})

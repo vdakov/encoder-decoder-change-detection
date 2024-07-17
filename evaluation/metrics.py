@@ -8,7 +8,9 @@ from scipy.stats import median_abs_deviation
 
 
 def evaluate_net_predictions(net, criterion, dataset, IOU_THRESHOLD=0.5):
-    '''A non-categorical evaluation that evaluates the accuracy of a neural networ as is. '''
+    '''A non-categorical evaluation that evaluates the accuracy of a neural network as is. The
+    reason it evaluates the images alone and doesn't collect the predictions as the training loop goes 
+    was a limitation of the training code, where it was hard to evaluate the IOU per batch.'''
     net.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -179,7 +181,7 @@ def evaluate_categories(dataset_name, dataset, predictions, categories, IOU_THRE
             I1, I2, cm, _, num_changes = dataset.get_img(img_index)
             print('Not a categorical dataset')
             
-        cm = np.squeeze(cm.cpu().detach().numpy())
+        cm = np.squeeze(cm)
         cm = np.zeros_like(cm) if np.max(cm) == np.min(cm) else (cm - np.min(cm)) / (np.max(cm) - np.min(cm))     
         cm = np.where(cm < 0.5, 0, 1)
         

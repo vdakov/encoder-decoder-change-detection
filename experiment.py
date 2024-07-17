@@ -103,11 +103,11 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
 
             training_metrics, validation_metrics = train(net, train_set, train_set_loader, val_set, criterion, device, n_epochs= epochs, save=True, save_dir = f'{model_path}.pth', skip_val = False, early_stopping = True)
             test_metrics = evaluate_net_predictions(net, criterion, test_set)
-            create_tables(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'tables'))
+            create_tables(training_metrics, validation_metrics, test_metrics, os.path.join(model_path, 'tables'))
 
         
         create_loss_accuracy_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
-        examine_subset(net, net_name, test_dataset, 3, device, os.path.join(model_path, 'figures'))
+        examine_subset(net, net_name, test_dataset, 10, device, os.path.join(model_path, 'figures'))
         
         predictions = get_predictions(net, test_dataset)
         predictions_dict[fusion] = predictions
@@ -115,21 +115,21 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         if dataset_name == "CSCD" and generate_plots:
             categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, ["large_change_uniform", "large_change_non_uniform", "small_change_non_uniform", "small_change_uniform"])
             aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
+            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
         if dataset_name == "HRSCD"and generate_plots:
             categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, ["No information", "Artificial surfaces", "Agricultural areas", 
                                                                                     "Forests", "Wetlands", "Water"])
             aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
+            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
         if dataset_name == "HIUCD"and generate_plots:
             categorical_metrics = evaluate_categories(dataset_name, test_set, predictions,["Unlabeled", "Water", "Grass", "Building", "Green house", 
                                                                                     "Road", "Bridge", "Others", "Bare land", "Woodland"])
             aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
+            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
         if dataset_name == "LEVIR" and generate_plots:
             categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, [])
             aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, net_name, os.path.join(model_path, 'tables'))
+            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
             
     
         
@@ -143,7 +143,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
-    ground_truth = get_ground_truth(net, test_dataset)
+    ground_truth = get_ground_truth(test_dataset)
     perform_statistical_tests(dataset_name, ground_truth, predictions_dict, model_path, p_val=0.05)
     aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, model_path)
     

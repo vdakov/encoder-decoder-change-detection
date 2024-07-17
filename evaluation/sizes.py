@@ -14,11 +14,13 @@ def calculate_sizes(dataset_name, ground_truth, predictions):
     
     for img in ground_truth:
         contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        distances = []
+        sizes = []
         for cnt in contours:
 
             area = cv2.contourArea(cnt)
-            ground_truth_areas.append(area)
+            sizes.append(area)
+        sizes = np.array(sizes)
+        ground_truth_areas.append(np.mean(sizes))
             
 
                 
@@ -26,14 +28,17 @@ def calculate_sizes(dataset_name, ground_truth, predictions):
                 
                 
     for k in predictions.keys():
-        
+        predictions_areas[k] = []
         for img in predictions[k]:
-            predictions_areas[k] = {}
+            
             contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            sizes = []
             for cnt in contours:
 
                 area = cv2.contourArea(cnt)
-                ground_truth_areas.append(area)
+                sizes.append(area)
+            sizes = np.array(sizes)
+            predictions_areas[k].append(np.mean(sizes))
         
 
     

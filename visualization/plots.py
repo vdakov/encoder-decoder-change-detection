@@ -12,7 +12,6 @@ from matplotlib import rcParams
 
 rcParams['font.family'] = 'serif'
 rcParams["font.family"] = "Times New Roman"
-rcParams['font.weight'] = 'bold'
 rcParams['axes.titlesize'] = 18  # Title font size
 rcParams['axes.labelsize'] = 24  # Axis label font size
 rcParams['xtick.labelsize'] = 20  # X tick label font size
