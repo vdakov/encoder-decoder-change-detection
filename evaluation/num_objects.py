@@ -3,11 +3,13 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 
+def get_number_of_objects(img):
+    contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    return len(contours)
+
 
 def calculate_num_objects(dataset_name, dataset):
-    def get_number_of_objects(img):
-        contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        return len(contours)
+
     num_objects = []
     for img in dataset:
         num_objects.append(get_number_of_objects(img))

@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 
 from distance import calculate_distances
+from hypothesis_histograms import compare_distributions_num_changes, compare_distributions_sizes, compare_distributions_spread
 from num_objects import calculate_num_objects
 from plots import plot_comparison_histogram
 from sizes import calculate_sizes
@@ -84,8 +85,29 @@ def perform_statistical_tests(dataset_name, ground_truth, predictions, save_path
     plot_comparison_histogram(dataset_name, gt_sizes, predictions_sizes, os.path.join(save_path, 'hist_sizes.png'))
     
     
-def aggregate_distribution_histogram(dataset_name, ground_truths, predictions_dict, save_path):
-        pass
+def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, save_path):
+    gt_num_changes = calculate_num_objects(dataset_name, ground_truth)
+    gt_spread , _ = calculate_distances(dataset_name, ground_truth, {})
+    gt_sizes , _ = calculate_sizes(dataset_name, ground_truth, {})
+    
+    predictions_num_changes = {}   
+    predictions_spread = {}
+    predictions_sizes = {}
+
+
+    
+    for key in predictions_dict.keys():
+        predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
+    for key in predictions_dict.keys():
+        _, b = calculate_distances(dataset_name, [], predictions_dict[key])
+        predictions_spread[key] = b
+    for key in predictions_dict.keys():
+        _, b = calculate_sizes(dataset_name, [], predictions_dict[key])
+        predictions_sizes[key] = b
+        
+    compare_distributions_num_changes(dataset_name, gt_num_changes, predictions_num_changes, colors, os.path.join(save_path, f'{dataset_name}aggregated_dist_num_changes.png'))
+    compare_distributions_spread(dataset_name, gt_spread, predictions_spread, colors, os.path.join(save_path, f'{dataset_name}-aggregated_dist_spread.png'))  
+    compare_distributions_sizes(dataset_name, gt_sizes, predictions_sizes, colors, os.path.join(save_path, f'{dataset_name}-aggregated_dist_sizes.png'))  
     
     
     

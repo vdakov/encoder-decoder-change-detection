@@ -1,12 +1,12 @@
 import sys
 
 sys.path.insert(1, '../siamese_fcn')
-sys.path.insert(1, '../datasets')
+sys.path.insert(1, '../pytorch_datasets')
 sys.path.insert(1, '../evaluation')
 sys.path.insert(1, '../results')
 sys.path.insert(1, '../visualization')
 sys.path.insert(1, '..')
-sys.path.insert(1, '../util')
+sys.path.insert(1, '../preprocessing')
 
 
 from torch.utils.data import Dataset

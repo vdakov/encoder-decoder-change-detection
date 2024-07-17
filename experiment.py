@@ -4,6 +4,7 @@ import sys
 
 
 
+
 sys.path.insert(1, 'siamese_fcn')
 sys.path.insert(1, 'pytorch_datasets')
 sys.path.insert(1, 'evaluation')
@@ -22,11 +23,11 @@ from cscd_dataset_loader import CSCD_Dataset
 from data_examination import examine_subset
 from hrscd_dataset_loader import HRSCD_Dataset
 from levir_dataset_loader import LEVIR_Dataset
-from metrics import evaluate_categories, evaluate_net_predictions, get_predictions
-from plots import aggregate_category_histograms, category_histograms, compare_number_of_buildings, create_loss_accuracy_figures
+from metrics import evaluate_categories, evaluate_net_predictions, get_ground_truth, get_predictions
+from plots import aggregate_category_histograms, compare_number_of_buildings, create_loss_accuracy_figures
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
-from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics, store_mean_difference, store_mean_difference_per_epoch
+from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics, store_mean_difference_per_epoch
 from train_test import train
 from unet import Unet 
 from late_siam_net import SiamLateFusion
@@ -34,6 +35,7 @@ import argparse
 from aggregate_training_results import plot_loss
 import gc
 import json
+from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
 
 
 
@@ -70,6 +72,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
  
     aggregate_categorical = []
     colors = {"Early": 'blue', "Middle-Conc": 'orange', "Middle-Diff": 'lime', "Late": 'red'}
+    predictions_dict = {}
     
     for fusion in fusions:
         if fusion == "Early":
@@ -107,7 +110,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         examine_subset(net, net_name, test_dataset, 3, device, os.path.join(model_path, 'figures'))
         
         predictions = get_predictions(net, test_dataset)
-        print('Predictions made')
+        predictions_dict[fusion] = predictions
         
         if dataset_name == "CSCD" and generate_plots:
             categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, ["large_change_uniform", "large_change_non_uniform", "small_change_non_uniform", "small_change_uniform"])
@@ -140,6 +143,9 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
+    ground_truth = get_ground_truth(net, test_dataset)
+    perform_statistical_tests(dataset_name, ground_truth, predictions_dict, model_path, p_val=0.05)
+    aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, model_path)
     
     if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD":
         aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
