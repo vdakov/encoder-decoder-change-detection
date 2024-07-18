@@ -141,8 +141,7 @@ def large_changes(img, uniform=True):
 
     
     label = np.logical_xor(t1, t2).astype(np.uint8) * 255
-    if uniform:
-        label = cv2.morphologyEx(label, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+
     label = cv2.cvtColor(label, cv2.COLOR_BGR2GRAY)
     num_changes = len(cv2.findContours(label, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)[0])
 
@@ -173,8 +172,7 @@ def small_change(img, uniform=True):
     t2 = t2.astype(np.uint8) * 255
 
     label = np.logical_xor(t1, t2).astype(np.uint8) * 255
-    if uniform:
-        label = cv2.morphologyEx(label, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+
 
     label = cv2.cvtColor(label, cv2.COLOR_BGR2GRAY)
     num_changes = len(cv2.findContours(label, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])
