@@ -93,7 +93,10 @@ def perform_statistical_tests(dataset_name, ground_truth, predictions_dict, save
     hypothesis_test_object_spread(dataset_name, gt_spread, predictions_spread, os.path.join(save_path, 't_test_spread.txt'), p_val)
     hypothesis_test_object_size(dataset_name, gt_sizes, predictions_sizes, os.path.join(save_path, 't_test_size.txt'), p_val)
     
+    
     for key in predictions_dict.keys():
+        
+        
         plot_comparison_histogram(dataset_name, gt_num_changes, predictions_num_changes[key], os.path.join(save_path,  f'{key}_hist_num_changes.png'))
         plot_comparison_histogram(dataset_name, gt_spread, predictions_spread[key], os.path.join(save_path, f'{key}_hist_spread.png'))
         plot_comparison_histogram(dataset_name, gt_sizes, predictions_sizes[key], os.path.join(save_path, f'{key}_hist_sizes.png'))

@@ -20,7 +20,7 @@ def calculate_sizes(dataset_name, ground_truth, predictions):
             area = cv2.contourArea(cnt)
             sizes.append(area)
         sizes = np.array(sizes)
-        ground_truth_areas.append(np.mean(sizes))
+        ground_truth_areas.append(np.mean(sizes) if len(sizes) > 0 else 0)
             
 
                 
@@ -38,7 +38,7 @@ def calculate_sizes(dataset_name, ground_truth, predictions):
                 area = cv2.contourArea(cnt)
                 sizes.append(area)
             sizes = np.array(sizes)
-            predictions_areas[k].append(np.mean(sizes))
+            predictions_areas[k].append(np.mean(sizes) if len(sizes) > 0 else 0)
         
 
     

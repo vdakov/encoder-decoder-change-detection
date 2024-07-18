@@ -35,9 +35,9 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                 distances_point.append(d)
             
             distances_point = np.array(distances_point)
-            distances.append(np.sum(distances_point))
+            distances.append(np.sum(distances_point) if len(distances_point) > 0 else 0)
             
-        if len(contours) > 0:
+        if len(distances) > 0:
             
             distances = np.array(distances)
             ground_truth_distances.append(np.mean(distances))
@@ -76,10 +76,10 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                     distances_point.append(d)
                     
                 distances_point = np.array(distances_point)
-                distances.append(np.sum(distances_point))
+                distances.append(np.sum(distances_point) if len(distances_point) > 0 else 0)
             
                 
-            if len(contours) > 0:    
+            if len(distances) > 0:    
                 distances = np.array(distances)
                 predictions_distances[k].append(np.mean(distances))
             else:

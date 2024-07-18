@@ -1,6 +1,9 @@
 import csv
 import sys
 
+from matplotlib import pyplot as plt
+import numpy as np
+
 
 
 
@@ -71,7 +74,12 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
  
     aggregate_categorical = []
-    colors = {"Early": 'blue', "Middle-Conc": 'orange', "Middle-Diff": 'lime', "Late": 'red'}
+    n = 4
+
+    # Create a list of n distinct colors
+    arr = plt.cm.viridis(np.linspace(0, 1, n))
+    colors = {"Early":  arr[0], "Middle-Conc": arr[1], "Middle-Diff": arr[2], "Late": arr[3]}
+    # colors = {"Early": 'blue', "Middle-Conc": 'orange', "Middle-Diff": 'lime', "Late": 'red'}
     predictions_dict = {}
     
     for fusion in fusions:
@@ -144,8 +152,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
     ground_truth = get_ground_truth(test_dataset)
-    perform_statistical_tests(dataset_name, ground_truth, predictions_dict, model_path, p_val=0.05)
-    aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, model_path)
+    perform_statistical_tests(dataset_name, ground_truth, predictions_dict, experiment_path, p_val=0.05)
+    aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
     
     if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD":
         aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
