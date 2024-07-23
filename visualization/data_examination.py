@@ -1,59 +1,72 @@
-import cv2 
-import os 
-import numpy as np 
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from torch.utils.data import DataLoader, SubsetRandomSampler
+import os
+import torch
+from torch.autograd import Variable
+import numpy as np
 
 
+def examine_subset(net, model_name, dataset, num_samples, device, save_path=None):
 
-# ===============================================================
-# As none of the datasets I found for change detection, I had to find some way to standardize 
-# the dataset files. This script is mean to equalize the file structure. Feel free to restructure it for the 
-# data structure of any of your datasets.
-# ===============================================================
+    p, q = num_samples // 4, 4
 
+    fig = plt.figure(figsize=(10, q * 2))
+    outer = gridspec.GridSpec(num_samples // 4, 4)
+    fig.suptitle(model_name, fontsize=16)
 
-dirname = os.path.join('..', 'data', 'HiUCD-Mini')
-set_name = 'train'
-name = '583536_8.png'
+    indices = torch.randperm(len(dataset)).tolist()[:num_samples]
+    sampler = SubsetRandomSampler(indices)
 
-label = cv2.imread(os.path.join(dirname,set_name, "label", name))
-A = cv2.imread(os.path.join(dirname,set_name,"A", name))
-B = cv2.imread(os.path.join(dirname,set_name,"B", name))
+    batch_size = 1
+    data_loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
 
-max_height = 400 
-max_width = 400
+    k = 0
+    for i in range(p):
+        for j in range(q):
+            batch = next(iter(data_loader))
 
+            img1 = batch['I1']
+            img2 = batch['I2']
+            label = batch['label']
+            I1 = Variable(batch['I1'].float().to(device))
+            I2 = Variable(batch['I2'].float().to(device))
+            label = Variable(batch['label'].float().to(device))
 
-print(np.unique(label[:, :, 0]))
-print(np.unique(label[:, :, 1]))
-print(np.unique(label[:, :, 2]))
+            output = net(I1, I2)
 
-
-
-print(label.shape)
-
-
-def resize_image(image, max_height, max_width):
-    height, width = label.shape[:2] 
-
-    if height > max_height or width > max_width:
-        scaling_factor = min(max_width / width, max_height / height)
-        return cv2.resize(image, (int(width * scaling_factor), int(height * scaling_factor)))
-    return image
-
-A = resize_image(A, max_height, max_width)
-B = resize_image(B, max_height, max_width)
-gt = resize_image(label, max_height, max_width)[:, :, 0]
-gt = np.where(gt < 2, 0, 255).astype(np.uint8)
+            img1 = np.transpose(np.squeeze(img1.cpu().numpy()), (1, 2, 0))
+            img2 = np.transpose(np.squeeze(img2.cpu().numpy()), (1, 2, 0))
+            label = np.squeeze(label.cpu().numpy())
+            output = np.exp(np.squeeze(output.cpu().detach().numpy())[1])
+            output = np.where(output < 0.5, 0, 1)
 
 
+            inner = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=outer[i, j], wspace=0.1, hspace=0.1)
 
+            ax1 = plt.Subplot(fig, inner[0, 0])
+            ax1.imshow(img1, cmap='gray')
+            ax1.set_title('T1')
+            ax1.axis('off')
+            fig.add_subplot(ax1)
 
-cv2.imshow('A', A) 
-cv2.imshow('B', B) 
-cv2.imshow('0', gt) 
+            ax2 = plt.Subplot(fig, inner[0, 1])
+            ax2.imshow(img2, cmap='gray')
+            ax2.set_title('T2')
+            ax2.axis('off')
+            fig.add_subplot(ax2)
 
-cv2.imwrite('A.png', A)
-cv2.imwrite('B.png', B)
-cv2.imwrite('gt.png', gt)
+            ax3 = plt.Subplot(fig, inner[1, 0])
+            ax3.imshow(label, cmap='gray')
+            ax3.set_title('GT')
+            ax3.axis('off')
+            fig.add_subplot(ax3)
 
-cv2.waitKey()   
+            ax4 = plt.Subplot(fig, inner[1, 1])
+            ax4.imshow(output, cmap='gray')
+            ax4.set_title('OUT')
+            ax4.axis('off')
+            fig.add_subplot(ax4)
+
+    if save_path:
+        plt.savefig(os.path.join(save_path, 'data_examination.png'))

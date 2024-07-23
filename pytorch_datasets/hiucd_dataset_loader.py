@@ -1,17 +1,19 @@
 import sys
 
+from num_objects import get_number_of_objects
+
 sys.path.insert(1, '../siamese_fcn')
 sys.path.insert(1, '../datasets')
 sys.path.insert(1, '../evaluation')
 sys.path.insert(1, '../results')
 sys.path.insert(1, '../visualization')
 sys.path.insert(1, '..')
-sys.path.insert(1, '../util')
+sys.path.insert(1, '../preprocessing')
 
 
 from torch.utils.data import Dataset
 import os
-from preprocess_util import reshape_for_torch
+from reshape import reshape_for_torch
 import numpy as np
 from tqdm import tqdm as tqdm
 import cv2
@@ -57,7 +59,7 @@ class HIUCD_Dataset(Dataset):
             self.imgs_2[img_name] = b
             self.change_maps[img_name] = label.astype(np.uint8) 
             self.land_covers[img_name] = landcover_label
-            self.num_changes[img_name] = len(cv2.findContours(label.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])
+            self.num_changes[img_name] = get_number_of_objects(label)
 
             s = label.shape
             n_pix += np.prod(s)

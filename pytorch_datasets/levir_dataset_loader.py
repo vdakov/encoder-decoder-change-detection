@@ -1,17 +1,18 @@
 import sys
 
 sys.path.insert(1, '../siamese_fcn')
-sys.path.insert(1, '../datasets')
+sys.path.insert(1, '../pytorch_datasets')
 sys.path.insert(1, '../evaluation')
 sys.path.insert(1, '../results')
 sys.path.insert(1, '../visualization')
 sys.path.insert(1, '..')
-sys.path.insert(1, '../util')
+sys.path.insert(1, '../preprocessing')
 
 
 from torch.utils.data import Dataset
 import os
-from preprocess_util import reshape_for_torch
+from reshape import reshape_for_torch
+from num_objects import get_number_of_objects
 import numpy as np
 from tqdm import tqdm as tqdm
 import cv2
@@ -46,15 +47,13 @@ class LEVIR_Dataset(Dataset):
             self.imgs_1[img_name] = a
             self.imgs_2[img_name] = b
             self.change_maps[img_name] = label.astype(np.uint8)
-            self.num_changes[img_name] = len(cv2.findContours(label.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0])
+            self.num_changes[img_name] = get_number_of_objects(label)
 
             s = label.shape
             n_pix += np.prod(s)
             true_pix += label.sum()
-            
-            s = self.imgs_1[img_name].shape
 
-            self.weights = [ FP_MODIFIER * 2 * true_pix / n_pix, 2 * (n_pix - true_pix) / n_pix]
+        self.weights = [ FP_MODIFIER * 2 * true_pix / n_pix, 2 * (n_pix - true_pix) / n_pix]
 
     def get_img(self, im_name):
         return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name], 'placeholder', self.num_changes[im_name]

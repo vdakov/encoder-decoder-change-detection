@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from matplotlib import rcParams
 
+from hypothesis_histograms import calculate_bins
+
 # ===========================
 # Functions used for various plots and figures throughout the experiment. All of them are set to 
 # have the same font and color scheme. Feel free to extend it. 
@@ -12,12 +14,6 @@ from matplotlib import rcParams
 
 rcParams['font.family'] = 'serif'
 rcParams["font.family"] = "Times New Roman"
-rcParams['font.weight'] = 'bold'
-rcParams['axes.titlesize'] = 18  # Title font size
-rcParams['axes.labelsize'] = 24  # Axis label font size
-rcParams['xtick.labelsize'] = 20  # X tick label font size
-rcParams['ytick.labelsize'] = 20  # Y tick label font size
-
 
 
 
@@ -76,10 +72,7 @@ def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model
 
     if save_path:
         os.makedirs(save_path, exist_ok=True)
-        os.makedirs(os.path.join(save_path, model_name), exist_ok=True)
-
-
-        plt.savefig(os.path.join(save_path, model_name, 'loss-accuracy-precision.png'))
+        plt.savefig(os.path.join(save_path, 'loss-accuracy-precision.png'))
         
 
 
@@ -217,6 +210,20 @@ def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metr
 
     
     plt.show()
+    
+
+
+def plot_comparison_histogram(dataset_name, gt, predictions, save_path):
+    num_bins = max(calculate_bins(gt), calculate_bins(predictions))
+    plt.hist(gt, bins = num_bins, color = 'black', alpha=0.5)
+    plt.hist(predictions, bins = num_bins, color = 'blue', alpha=0.5)
+    plt.savefig(save_path)
+    plt.show()
+    
+    
+
+    
+
     
     
 
