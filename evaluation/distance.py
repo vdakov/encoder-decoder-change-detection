@@ -3,6 +3,21 @@ import numpy as np
 import cv2
 import os  
 from sklearn.cluster import KMeans
+# =========================
+# Using the centroids of each contour, we apply an urban network analysis formula. 
+# This involves summing the distances between all points in the image and then taking the mean. 
+# The distance per image A is measured as follows:
+
+# D_A = (1/n) * sum_{i=1}^n sum_j (S_contour_i / e^(beta * d_ij))
+
+# where:
+# S_contour_i = area of contour i
+# d_ij = distance between point i and point j
+# n = number of contours
+# beta = coefficient
+# ==============================
+# The clustering used here is to get draw a decision boundary between close and far away changes.
+# ==============================
 
 
 def calculate_distances(dataset_name, ground_truth, predictions):
