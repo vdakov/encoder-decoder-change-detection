@@ -5,7 +5,10 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-
+#====================
+# Size is measured in the same way as the number of changes, via a connected contours 
+# topological algorithm but just using the area of each contour (in pixels). 
+#====================
 
 
 def calculate_sizes(dataset_name, ground_truth, predictions):

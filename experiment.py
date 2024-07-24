@@ -4,6 +4,8 @@ import sys
 from matplotlib import pyplot as plt
 import numpy as np
 
+from losses.focal_loss import FocalLoss
+
 
 
 
@@ -51,6 +53,7 @@ def get_args():
     parser.add_argument("--batch_size", type = int, default=32)
     parser.add_argument("--dir", type = str, default = os.path.join("..", "..", "data", "LEVIR-CD - Toy"))
     parser.add_argument("--dataset_name", type = str, default = os.path.join("..", "..", "data", "LEVIR-CD - Toy"))
+    parser.add_argument("--loss", type=str, default="nll")
     parser.add_argument("--restore_prev", type = bool, default = False)
     parser.add_argument("--generate_plots", type = bool, default = False)
 
@@ -83,6 +86,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     predictions_dict = {}
     
     for fusion in fusions:
+        print('Training ', fusion, ':')
         if fusion == "Early":
             net, net_name = Unet(6, 2), f'Early-{experiment_name}'
         elif fusion == "Middle-Conc": 
@@ -98,6 +102,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         categorical_metrics = {}
 
         if os.path.exists(f'{model_path}.pth') and restore_prev == True:
+            print('Restored weights!')
             state_dict = torch.load(f'{model_path}.pth')
             net.load_state_dict(state_dict)
             
@@ -184,6 +189,7 @@ if __name__ == "__main__":
     restore_prev = args.restore_prev
     n_epochs = args.epochs
     generate_plots = args.generate_plots
+    loss = args.loss
     
     torch.manual_seed(42)
 
@@ -193,7 +199,13 @@ if __name__ == "__main__":
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     weights = torch.FloatTensor(train_dataset.weights).to(device)
-    criterion = nn.NLLLoss(weight=weights)
+    
+    if loss == "nll":
+        criterion = nn.NLLLoss(weight=weights)
+    elif loss == "focal_loss":
+        criterion = FocalLoss(gamma=2, alpha=0.25)
+    else: 
+        criterion = nn.NLLLoss(weight=weights)
 
     train_loader = DataLoader(train_dataset, batch_size = batch_size, shuffle = True, num_workers = 1)
     test_loader = DataLoader(test_dataset, batch_size = batch_size, shuffle = True, num_workers = 1)

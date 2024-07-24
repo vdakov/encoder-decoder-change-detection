@@ -3,6 +3,21 @@ import numpy as np
 import cv2
 import os  
 from sklearn.cluster import KMeans
+# =========================
+# Using the centroids of each contour, we apply an urban network analysis formula. 
+# This involves summing the distances between all points in the image and then taking the mean. 
+# The distance per image A is measured as follows:
+
+# D_A = (1/n) * sum_{i=1}^n sum_j (S_contour_i / e^(beta * d_ij))
+
+# where:
+# S_contour_i = area of contour i
+# d_ij = distance between point i and point j
+# n = number of contours
+# beta = coefficient
+# ==============================
+# The clustering used here is to get draw a decision boundary between close and far away changes.
+# ==============================
 
 
 def calculate_distances(dataset_name, ground_truth, predictions):
@@ -63,11 +78,12 @@ def calculate_distances(dataset_name, ground_truth, predictions):
                 cx1 = M1['m10'] / M1['m00']
                 cy1 = M1['m01'] / M1['m00']
                 distances_point = []
-                area = cv2.contourArea(cnt)
+                
                 for cnt2 in contours:
                     if cnt is cnt2:
                         continue
                     M2 = cv2.moments(cnt2)
+                    area = cv2.contourArea(cnt2)
                     if M2['m00'] == 0:
                         continue
                     cx2 = int(M2['m10']/M2['m00'])
@@ -95,7 +111,7 @@ def calculate_distance_two_points(x1, y1, x2, y2, area):
     
     beta = 0.05 
     
-    return area / np.exp(beta * np.linalg.norm(a - b)) 
+    return 1 / np.exp(beta * np.linalg.norm(a - b)) 
 
 
 def plot_spread_histogram(dataset_name, distances):

@@ -8,6 +8,12 @@ from num_objects import calculate_num_objects
 from plots import plot_comparison_histogram
 from sizes import calculate_sizes
 
+#=========================
+# The t-test of two-related groups is applied to the measurements of the inter-object distance, object size and on the num changes. 
+# The null hypothesis in all cases is that the mean between all fusion architectures for the given metrics are the same. 
+# The reason we use the correlated groups t-test is because the predictions come from the same ground truth data. 
+#=========================
+
 def hypothesis_test_num_changes(dataset_name, ground_truth, predictions, output_file, p_val = 0.05):
     gt_mu = np.mean(ground_truth)
     rejected = False
@@ -16,13 +22,16 @@ def hypothesis_test_num_changes(dataset_name, ground_truth, predictions, output_
         file.write(f'Dataset: {dataset_name}\n')
         file.write(f'Ground truth mean: {gt_mu}\n')
         
-        for k in predictions.keys():
-            t_test, p = stats.ttest_rel(ground_truth, predictions[k])
-            
-            file.write(f'{k}: {np.mean(predictions[k])}\n')
-            
-            if p < p_val:
-                rejected = True
+        for k1 in predictions.keys():
+            for k2 in predictions.keys():
+                if k1 == k2:
+                    continue
+                t_test, p = stats.ttest_rel(predictions[k1], predictions[k2])
+                
+                file.write(f'{k1}: {np.mean(predictions[k1])}\n')
+                
+                if p < p_val:
+                    rejected = True
         
         if not rejected:
             file.write('Accept the null hypothesis about the number of changes!\n')
@@ -38,18 +47,21 @@ def hypothesis_test_object_size(dataset_name, ground_truth, predictions, output_
         file.write(f'Dataset: {dataset_name}\n')
         file.write(f'Ground truth mean: {gt_mu}\n')
         
-        for k in predictions.keys():
-            t_test, p = stats.ttest_rel(ground_truth, predictions[k])
-            
-            file.write(f'{k}: {np.mean(predictions[k])}\n')
-            
-            if p < p_val:
-                rejected = True
+        for k1 in predictions.keys():
+            for k2 in predictions.keys():
+                if k1 == k2:
+                    continue
+                t_test, p = stats.ttest_rel(predictions[k1], predictions[k2])
+                
+                file.write(f'{k1}: {np.mean(predictions[k1])}\n')
+                
+                if p < p_val:
+                    rejected = True
         
         if not rejected:
-            file.write('Accept the null hypothesis about the size of changes!\n')
+            file.write('Accept the null hypothesis about the number of changes!\n')
         else:
-            file.write('Reject the null hypothesis about the size of changes!\n')
+            file.write('Reject the null hypothesis about the number of changes!\n')
             
 def hypothesis_test_object_spread(dataset_name, ground_truth, predictions, output_file, p_val = 0.05):
     gt_mu = np.mean(ground_truth)
@@ -59,18 +71,21 @@ def hypothesis_test_object_spread(dataset_name, ground_truth, predictions, outpu
         file.write(f'Dataset: {dataset_name}\n')
         file.write(f'Ground truth mean: {gt_mu}\n')
         
-        for k in predictions.keys():
-            t_test, p = stats.ttest_rel(ground_truth, predictions[k])
-            
-            file.write(f'{k}: {np.mean(predictions[k])}\n')
-            
-            if p < p_val:
-                rejected = True
+        for k1 in predictions.keys():
+            for k2 in predictions.keys():
+                if k1 == k2:
+                    continue
+                t_test, p = stats.ttest_rel(predictions[k1], predictions[k2])
+                
+                file.write(f'{k1}: {np.mean(predictions[k1])}\n')
+                
+                if p < p_val:
+                    rejected = True
         
         if not rejected:
-            file.write('Accept the null hypothesis about the spread of changes!\n')
+            file.write('Accept the null hypothesis about the number of changes!\n')
         else:
-            file.write('Reject the null hypothesis about the spread of changes!\n')
+            file.write('Reject the null hypothesis about the number of changes!\n')
             
             
             

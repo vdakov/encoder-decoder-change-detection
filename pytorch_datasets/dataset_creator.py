@@ -204,14 +204,14 @@ labels = []
 situation_label = []
 
 change_methods = [large_changes, small_change]
-sets = ['illustration']
-# sets = ['train', 'test', 'val']
+# sets = ['illustration']
+sets = ['train', 'test', 'val']
 sizes = []
 # sizes = [64, 32, 32]
 # sizes = [608, 208, 208]
-# sizes = [2048, 512, 512]
-os.makedirs(os.path.join('..', 'data', 'Visualization'), exist_ok=True)
-# os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
+sizes = [2048, 512, 512]
+# os.makedirs(os.path.join('..', 'data', 'Visualization'), exist_ok=True)
+os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
 for i, set in enumerate(sets):
     set_path = os.path.join('..', 'data', 'CSCD', set)
     t1_dir = os.path.join(set_path, 'A')
