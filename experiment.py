@@ -1,10 +1,6 @@
 import csv
 import sys
 
-from matplotlib import pyplot as plt
-import numpy as np
-
-from losses.focal_loss import FocalLoss
 
 
 
@@ -20,6 +16,11 @@ sys.path.insert(1, 'preprocessing')
 
 import os
 import torch
+from matplotlib import pyplot as plt
+import numpy as np
+from data_augmentation import RandomFlip, RandomRot
+from losses.focal_loss import FocalLoss
+import torchvision.transforms as tr
 from torch import nn
 from hiucd_dataset_loader import HIUCD_Dataset
 from torch.utils.data import DataLoader
@@ -45,6 +46,7 @@ from statistical_tests import aggregate_distribution_histograms, perform_statist
 
 
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment_name", type = str, default = "Default")
@@ -56,6 +58,7 @@ def get_args():
     parser.add_argument("--loss", type=str, default="nll")
     parser.add_argument("--restore_prev", type = bool, default = False)
     parser.add_argument("--generate_plots", type = bool, default = False)
+    parser.add_argument("--data_augmentation", type = bool, default = False)
 
     return parser.parse_args()
 
@@ -165,17 +168,15 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     compare_number_of_buildings(dataset_name, '# Predicted Buildings', aggregate_categorical, os.path.join(experiment_path))
     
 
-def get_dataset(dataset_name, dirname, mode, FP_MODIFIER):
+def get_dataset(dataset_name, dirname, mode, FP_MODIFIER, transform=None):
     if dataset_name == 'LEVIR':
-        return LEVIR_Dataset(dirname, mode, FP_MODIFIER)
+        return LEVIR_Dataset(dirname, mode, FP_MODIFIER, transform=transform)
     elif dataset_name == 'HRSCD':
         return HRSCD_Dataset(dirname, mode, FP_MODIFIER)
     elif dataset_name == 'CSCD':
         return CSCD_Dataset(dirname, mode, FP_MODIFIER)
     elif dataset_name == 'HIUCD':
         return HIUCD_Dataset(dirname, mode, FP_MODIFIER)
-    elif dataset_name == 'LEVIR':
-        return LEVIR_Dataset(dirname, mode, FP_MODIFIER)
     else:
         raise ValueError("Unknown dataset name")
     
@@ -190,12 +191,23 @@ if __name__ == "__main__":
     n_epochs = args.epochs
     generate_plots = args.generate_plots
     loss = args.loss
+    data_augmentation = args.data_augmentation
     
     torch.manual_seed(42)
+    
+    if data_augmentation:
+        data_transform = tr.Compose([RandomFlip(), RandomRot()])
+    else:
+        data_transform = None
+    
 
-    train_dataset = get_dataset(dataset_name, directory, "train", FP_MODIFIER)
-    val_dataset = get_dataset(dataset_name, directory, "val", FP_MODIFIER)
-    test_dataset = get_dataset(dataset_name, directory, "test", FP_MODIFIER)
+
+    train_dataset = get_dataset(dataset_name, directory, "train", FP_MODIFIER, transform=data_transform)
+    val_dataset = get_dataset(dataset_name, directory, "val", FP_MODIFIER, transform=data_transform)
+    test_dataset = get_dataset(dataset_name, directory, "test", FP_MODIFIER, transform=data_transform)
+        
+  
+        
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     weights = torch.FloatTensor(train_dataset.weights).to(device)
