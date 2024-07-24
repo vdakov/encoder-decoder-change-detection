@@ -128,8 +128,9 @@ class CSCD_Dataset(Dataset):
         I2 = self.imgs_2[im_name][:, limits[0]:limits[1], limits[2]:limits[3]]
         
         label = self.change_maps[im_name][limits[0]:limits[1], limits[2]:limits[3]]
-        label = torch.from_numpy(1*np.array(label)).float()
         num_changes = get_number_of_objects(label)
+        label = torch.from_numpy(1*np.array(label)).float()
+        
         
         sample = {'I1': I1, 'I2': I2, 'label': label, "num_changes" : num_changes}
         

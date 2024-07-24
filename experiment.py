@@ -59,7 +59,7 @@ def get_args():
     parser.add_argument("--restore_prev", type = bool, default = False)
     parser.add_argument("--generate_plots", type = bool, default = False)
     parser.add_argument("--data_augmentation", type = bool, default = False)
-    parser.add_argument("--patch_size", type = int, default = 96)
+    parser.add_argument("--patch_side", type = int, default = 96)
 
     return parser.parse_args()
 
@@ -168,15 +168,15 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     compare_number_of_buildings(dataset_name, '# Predicted Buildings', aggregate_categorical, os.path.join(experiment_path))
     
 
-def get_dataset(dataset_name, dirname, mode, FP_MODIFIER, transform=None):
+def get_dataset(dataset_name, dirname, mode, FP_MODIFIER, patch_side=96, transform=None):
     if dataset_name == 'LEVIR':
-        return LEVIR_Dataset(dirname, mode, FP_MODIFIER, transform=transform)
+        return LEVIR_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
     elif dataset_name == 'HRSCD':
-        return HRSCD_Dataset(dirname, mode, FP_MODIFIER)
+        return HRSCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
     elif dataset_name == 'CSCD':
-        return CSCD_Dataset(dirname, mode, FP_MODIFIER)
+        return CSCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
     elif dataset_name == 'HIUCD':
-        return HIUCD_Dataset(dirname, mode, FP_MODIFIER)
+        return HIUCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
     else:
         raise ValueError("Unknown dataset name")
     
