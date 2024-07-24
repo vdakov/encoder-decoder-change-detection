@@ -59,6 +59,7 @@ def get_args():
     parser.add_argument("--restore_prev", type = bool, default = False)
     parser.add_argument("--generate_plots", type = bool, default = False)
     parser.add_argument("--data_augmentation", type = bool, default = False)
+    parser.add_argument("--patch_size", type = int, default = 96)
 
     return parser.parse_args()
 
@@ -191,6 +192,7 @@ if __name__ == "__main__":
     generate_plots = args.generate_plots
     loss = args.loss
     data_augmentation = args.data_augmentation
+    patch_side = args.patch_side
     
     torch.manual_seed(42)
     
@@ -201,9 +203,9 @@ if __name__ == "__main__":
     
 
 
-    train_dataset = get_dataset(dataset_name, directory, "train", FP_MODIFIER, transform=data_transform)
-    val_dataset = get_dataset(dataset_name, directory, "val", FP_MODIFIER, transform=data_transform)
-    test_dataset = get_dataset(dataset_name, directory, "test", FP_MODIFIER, transform=data_transform)
+    train_dataset = get_dataset(dataset_name, directory, "train", FP_MODIFIER, transform=data_transform, patch_side = patch_side)
+    val_dataset = get_dataset(dataset_name, directory, "val", FP_MODIFIER, transform=data_transform, patch_side = patch_side)
+    test_dataset = get_dataset(dataset_name, directory, "test", FP_MODIFIER, transform=data_transform, patch_side = patch_side)
         
   
         
