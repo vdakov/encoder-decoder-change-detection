@@ -80,9 +80,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
  
     aggregate_categorical = []
+    
     n = 4
-
-    # Create a list of n distinct colors
     arr = plt.cm.viridis(np.linspace(0, 1, n))
     colors = {"Early":  arr[0], "Middle-Conc": arr[1], "Middle-Diff": arr[2], "Late": arr[3]}
     # colors = {"Early": 'blue', "Middle-Conc": 'orange', "Middle-Diff": 'lime', "Late": 'red'}
