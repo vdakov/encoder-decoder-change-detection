@@ -86,6 +86,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     predictions_dict = {}
     
     for fusion in fusions:
+        print('Training ', fusion, ':')
         if fusion == "Early":
             net, net_name = Unet(6, 2), f'Early-{experiment_name}'
         elif fusion == "Middle-Conc": 
@@ -101,6 +102,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         categorical_metrics = {}
 
         if os.path.exists(f'{model_path}.pth') and restore_prev == True:
+            print('Restored weights!')
             state_dict = torch.load(f'{model_path}.pth')
             net.load_state_dict(state_dict)
             

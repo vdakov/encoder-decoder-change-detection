@@ -42,7 +42,7 @@ def plot_loss(experiment_name, fusions, colors):
             for row in reader:
                 training_results.append(float(row['net_loss']))
                 
-            plt.ylim([0, max(training_results)])
+            plt.ylim([0, max(training_results) if len(training_results) > 0 else 0])
             plt.plot(np.arange(len(training_results)), training_results, label=f, color=colors[f], linestyle='-')
         
         with open(os.path.join(path, dir, 'tables', 'val_metrics.csv'), newline='') as csvfile:
@@ -50,6 +50,7 @@ def plot_loss(experiment_name, fusions, colors):
             validation_results = []
             for row in reader:
                 validation_results.append(float(row['net_loss']))
+            plt.ylim([0, max(validation_results) if len(validation_results) > 0 else 0])
             plt.plot(np.arange(len(validation_results)), validation_results, label=f'{f}-Val.', color=colors[f], linestyle='dashed')
     
     plt.tight_layout()
