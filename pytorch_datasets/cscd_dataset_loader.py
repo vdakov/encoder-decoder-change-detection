@@ -68,14 +68,14 @@ class CSCD_Dataset(Dataset):
             label = cv2.imread(os.path.join(dirname, set_name, "label", name), cv2.IMREAD_GRAYSCALE)
             label = (label - np.min(label)) / (np.ptp(label)) if np.ptp(label) != 0 else np.zeros_like(label)
             situation = situation_dict[name]
-            # n_changes = num_changes_dict[name]
+            n_changes = num_changes_dict[name]
 
 
             self.imgs_1[img_name] = a
             self.imgs_2[img_name] = b
             self.change_maps[img_name] = label
             self.situations[img_name] = situation
-            # self.num_changes[img_name] = n_changes
+            self.num_changes[img_name] = n_changes
             
 
 

@@ -117,8 +117,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         else: 
             os.makedirs(model_path, exist_ok=True)
 
-            training_metrics, validation_metrics = train(net, train_set, train_set_loader, val_set, criterion, device, n_epochs= epochs, save=True, save_dir = f'{model_path}.pth', skip_val = False, early_stopping = True)
-            test_metrics = evaluate_net_predictions(net, criterion, test_set)
+            training_metrics, validation_metrics = train(net, train_set, train_set_loader, val_set, val_set_loader, criterion, device, n_epochs= epochs, save=True, save_dir = f'{model_path}.pth', skip_val = False, early_stopping = True)
+            test_metrics = evaluate_net_predictions(net, criterion, test_set_loader)
             create_tables(training_metrics, validation_metrics, test_metrics, os.path.join(model_path, 'tables'))
 
         

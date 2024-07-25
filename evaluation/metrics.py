@@ -7,7 +7,7 @@ import cv2
 from scipy.stats import median_abs_deviation
 
 
-def evaluate_net_predictions(net, criterion, dataset, IOU_THRESHOLD=0.5):
+def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
     '''A non-categorical evaluation that evaluates the accuracy of a neural network as is. The
     reason it evaluates the images alone and doesn't collect the predictions as the training loop goes 
     was a limitation of the training code, where it was hard to evaluate the IOU per batch.'''
@@ -21,54 +21,85 @@ def evaluate_net_predictions(net, criterion, dataset, IOU_THRESHOLD=0.5):
     fn = 0
 
     tot_loss = 0
+    
+    for batch in dataset_loader:
+        I1_batch = Variable(batch['I1'].float().to(device))
+        I2_batch = Variable(batch['I2'].float().to(device))
+        cm_batch = Variable(batch['label'].long().to(device))
 
-    for img_index in dataset.names:
-        I1, I2, cm, _, _ = dataset.get_img(img_index)
 
-        I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
-        I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
-        cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm), 0).long().to(device))
-
-        output = net(I1, I2).float().to(device)
-
-        loss = criterion(output, cm)
+        output_batch = net(I1_batch, I2_batch).to(device)
+        loss = criterion(output_batch, cm_batch)
         tot_loss += loss.item()
-
-        predicted =  np.exp(np.squeeze(output.cpu().detach().numpy())[1])
-        predicted = np.where(predicted < 0.5, 0, 1)
-
-        cm = np.squeeze(cm.cpu().detach().numpy())
-        cm = (cm - np.min(cm)) / (np.ptp(cm)) if np.ptp(cm) != 0 else np.zeros_like(cm)
-        gt = np.where(cm > 0.5, 1, 0)
-
-        pr = predicted.flatten()
-        gt = gt.flatten()
         
-        tp_img = np.sum(np.logical_and(pr, gt))
-        tn_img = np.sum(np.logical_and(np.logical_not(pr), np.logical_not(gt)))
-        fp_img = np.sum(np.logical_and(pr, np.logical_not(gt)))
-        fn_img = np.sum(np.logical_and(np.logical_not(pr), gt))
+        predicted_labels  = torch.exp(output_batch[:, 1, :, :])
+            
+        cm_batch_min = cm_batch.min(dim=1, keepdim=True)[0]
+        cm_batch_max = cm_batch.max(dim=1, keepdim=True)[0]
+        cm_batch_normalized = (cm_batch - cm_batch_min) / (cm_batch_max - cm_batch_min + 1e-6)
+        gt_labels = (cm_batch_normalized > 0.5).long()
         
-        
-        assert (np.sum([tp_img, fp_img, tn_img, fn_img]) == len(pr))
-        
-        denominator = tp_img + fn_img + fp_img
-        iou = tp_img / denominator if denominator != 0 else 0.0
-        
-        prediction_made = tp_img + fp_img > 0
-        no_object = tp_img + fn_img == 0
+        pr = predicted_labels.view(-1)
+        gt = gt_labels.view(-1)
+  
+        # Calculate TP, TN, FP, FN for the entire batch
+        tp += (pr * gt).sum().item()
+        tn += ((1 - pr) * (1 - gt)).sum().item()
+        fp += (pr * (1 - gt)).sum().item()
+        fn += ((1 - pr) * gt).sum().item()
 
-        if iou >= IOU_THRESHOLD:
-            tp += 1
-        elif iou < IOU_THRESHOLD and prediction_made:
-            fp += 1
-        elif (iou == 0 or not prediction_made) and (not no_object):
-            fn += 1
-        elif (not prediction_made) and no_object:
-            tn += 1
+                
+             
+
+             
+
+    # for img_index in dataset.names:
+    #     I1, I2, cm, _, _ = dataset.get_img(img_index)
+
+    #     I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
+    #     I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
+    #     cm = Variable(torch.unsqueeze(torch.from_numpy(1.0*cm), 0).long().to(device))
+
+    #     output = net(I1, I2).float().to(device)
+
+    #     loss = criterion(output, cm)
+    #     tot_loss += loss.item()
+
+    #     predicted =  np.exp(np.squeeze(output.cpu().detach().numpy())[1])
+    #     predicted = np.where(predicted < 0.5, 0, 1)
+
+    #     cm = np.squeeze(cm.cpu().detach().numpy())
+    #     cm = (cm - np.min(cm)) / (np.ptp(cm)) if np.ptp(cm) != 0 else np.zeros_like(cm)
+    #     gt = np.where(cm > 0.5, 1, 0)
+
+    #     pr = predicted.flatten()
+    #     gt = gt.flatten()
+        
+    #     tp_img = np.sum(np.logical_and(pr, gt))
+    #     tn_img = np.sum(np.logical_and(np.logical_not(pr), np.logical_not(gt)))
+    #     fp_img = np.sum(np.logical_and(pr, np.logical_not(gt)))
+    #     fn_img = np.sum(np.logical_and(np.logical_not(pr), gt))
+        
+        
+    #     assert (np.sum([tp_img, fp_img, tn_img, fn_img]) == len(pr))
+        
+    #     denominator = tp_img + fn_img + fp_img
+    #     iou = tp_img / denominator if denominator != 0 else 0.0
+        
+    #     prediction_made = tp_img + fp_img > 0
+    #     no_object = tp_img + fn_img == 0
+
+    #     if iou >= IOU_THRESHOLD:
+    #         tp += 1
+    #     elif iou < IOU_THRESHOLD and prediction_made:
+    #         fp += 1
+    #     elif (iou == 0 or not prediction_made) and (not no_object):
+    #         fn += 1
+    #     elif (not prediction_made) and no_object:
+    #         tn += 1
 
 
-    net_loss = tot_loss / len(dataset.names)
+    net_loss = tot_loss / len(dataset_loader.dataset)
     net_accuracy = 100 * (tp + tn) / (tp + tn + fp + fn + 1e-10)
     prec = tp /(tp + fp) if (tp + fp) != 0 else 0
     rec = tp / (tp + fn) if (tp + fn) != 0 else 0

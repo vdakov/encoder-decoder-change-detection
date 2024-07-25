@@ -56,7 +56,7 @@ class LEVIR_Dataset(Dataset):
             self.imgs_1[img_name] = a
             self.imgs_2[img_name] = b
             self.change_maps[img_name] = label.astype(np.uint8)
-            # self.num_changes[img_name] = get_number_of_objects(label)
+            self.num_changes[img_name] = get_number_of_objects(label)
 
             s = label.shape
             n_pix += np.prod(s)
