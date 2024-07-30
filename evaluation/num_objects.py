@@ -24,10 +24,3 @@ def calculate_num_objects(dataset_name, dataset):
 
 
 
-
-# gt_images = [cv2.imread(os.path.join('..', 'data', 'CSCD', 'train', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'CSCD', 'train', 'label'))] 
-# gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'CSCD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'CSCD', 'test', 'label'))] 
-# gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'CSCD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'CSCD', 'val', 'label'))] 
-# gt_distances = get_num_objects_dataset('LEVIR', gt_images)
-# plt.hist(gt_distances, bins = 33)
-# plt.show()

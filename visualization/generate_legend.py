@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt 
 from matplotlib.pyplot import rcParams
+import numpy as np
 
 
 # ===============================================================
@@ -10,16 +11,20 @@ from matplotlib.pyplot import rcParams
 
 
 rcParams["font.family"] = "Times New Roman"
+n = 4
+
+# Create a list of n distinct colors
+arr = plt.cm.viridis(np.linspace(0, 1, n))
 
 colors = {
-    "FC-EF": 'blue', 
-    "FC-Siam-Conc.": 'orange', 
-    "FC-Siam-Diff.": 'lime', 
-    "FC-LF": 'red',
-    "FC-EF-Val.": 'blue', 
-    "FC-Siam-Conc.-Val.": 'orange', 
-    "FC-Siam-Diff.-Val.": 'lime', 
-    "FC-LF-Val.": 'red'
+    "FC-EF": arr[0], 
+    "FC-Siam-Conc.":  arr[1], 
+    "FC-Siam-Diff.": arr[2], 
+    "FC-LF": arr[3],
+    "FC-EF-Val.": arr[0], 
+    "FC-Siam-Conc.-Val.": arr[1], 
+    "FC-Siam-Diff.-Val.": arr[2], 
+    "FC-LF-Val.": arr[3]
 }
 
 custom_lines = [

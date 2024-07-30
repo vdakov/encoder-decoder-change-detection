@@ -6,7 +6,7 @@ from tqdm import tqdm as tqdm
 import time
 import numpy as np
 
-def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_epochs = 10, save = True, save_dir=f'{time.time()}.pth.tar', skip_val = True, early_stopping = True):
+def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, device, n_epochs = 10, save = True, save_dir=f'{time.time()}.pth.tar', skip_val = True, early_stopping = True):
     '''
     The current training and validation loop used for the experiment. Here all major hyperparameters and machine learning 
     methods have been employed. They include: 
@@ -19,7 +19,7 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
     train_metrics = []
     val_metrics = []
     
-    patience = 5
+    patience = 10
     best_loss = float('inf')
     best_model_weights = None
     
@@ -32,6 +32,7 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
                 I1 = Variable(batch['I1'].float().to(device))
                 I2 = Variable(batch['I2'].float().to(device))
                 label = Variable(batch['label'].long().to(device))
+        
  
                 optimizer.zero_grad()
 
@@ -47,9 +48,9 @@ def train(net, train_dataset, train_loader, val_dataset, criterion, device, n_ep
 
         scheduler.step()
 
-        train_metrics.append(evaluate_net_predictions(net, criterion, train_dataset))
+        train_metrics.append(evaluate_net_predictions(net, criterion, train_loader))
         if not skip_val:
-            curr_val_metrics = evaluate_net_predictions(net, criterion, val_dataset)
+            curr_val_metrics = evaluate_net_predictions(net, criterion, val_loader)
             val_metrics.append(curr_val_metrics)
 
             val_loss = curr_val_metrics['net_loss']

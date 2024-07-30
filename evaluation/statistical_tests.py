@@ -103,6 +103,10 @@ def perform_statistical_tests(dataset_name, ground_truth, predictions_dict, save
     _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
     _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
     
+    print(predictions_num_changes)
+    print(predictions_spread)
+    print(predictions_sizes)
+    
     
     hypothesis_test_num_changes(dataset_name, gt_num_changes, predictions_num_changes, os.path.join(save_path, 't_test_num_changes.txt'), p_val)
     hypothesis_test_object_spread(dataset_name, gt_spread, predictions_spread, os.path.join(save_path, 't_test_spread.txt'), p_val)
@@ -129,6 +133,10 @@ def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_di
     _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
 
     _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
+    
+    os.makedirs(os.path.join(save_path, 'kdes'))
+    os.makedirs(os.path.join(save_path, 'histograms'))
+    os.makedirs(os.path.join(save_path, 'cdfs'))
 
         
     compare_distributions_num_changes(dataset_name, gt_num_changes, predictions_num_changes, colors, os.path.join(save_path, f'{dataset_name}aggregated_dist_num_changes.png'))

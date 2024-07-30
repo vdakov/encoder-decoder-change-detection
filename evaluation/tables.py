@@ -44,22 +44,7 @@ def create_tables(train_metrics, val_metrics, test_metrics, save_path=""):
         with open(test_filename_tex, 'w', encoding='utf-8') as f:
             f.write(test_frame.to_latex(index=False))
             
-def create_categorical_tables(categorical_metrics, save_path=None):
-    '''
-    Once we have the categorical metrics, we can use this function to store them as a JSON. It is 
-    picked as an alternative format to CSV due to its better compatibility with the "number of changes" metric
-    predicted. 
-    
-    '''
 
-    filename_category = os.path.join(save_path, 'categorical_metrics.json')
-    
-    for key, value in categorical_metrics.items():
-        if isinstance(value, np.ndarray):
-            categorical_metrics[key] = value.tolist()
-
-    with open(filename_category, 'w') as f:
-        json.dump(categorical_metrics, f, indent=4)
         
     
 def store_mean_difference_per_epoch(aggregate_category_metrics, experiment_name):
