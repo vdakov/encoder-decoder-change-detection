@@ -19,7 +19,7 @@ def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, 
     train_metrics = []
     val_metrics = []
     
-    patience = 5
+    patience = 10
     best_loss = float('inf')
     best_model_weights = None
     

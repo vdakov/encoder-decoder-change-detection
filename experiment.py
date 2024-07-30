@@ -22,18 +22,16 @@ from data_augmentation import RandomFlip, RandomRot
 from losses.focal_loss import FocalLoss
 import torchvision.transforms as tr
 from torch import nn
-from hiucd_dataset_loader import HIUCD_Dataset
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from cscd_dataset_loader import CSCD_Dataset
 from data_examination import examine_subset
-from hrscd_dataset_loader import HRSCD_Dataset
 from levir_dataset_loader import LEVIR_Dataset
-from metrics import evaluate_categories, evaluate_net_predictions, get_ground_truth, get_predictions
-from plots import aggregate_category_histograms, compare_number_of_buildings, create_loss_accuracy_figures
+from metrics import evaluate_net_predictions, get_ground_truth, get_predictions
+from plots import create_loss_accuracy_figures
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
-from tables import create_categorical_tables, create_tables, load_categorical_metrics, load_metrics, store_mean_difference_per_epoch
+from tables import create_tables, load_metrics, store_mean_difference_per_epoch
 from train_test import train
 from unet import Unet 
 from late_siam_net import SiamLateFusion
@@ -102,7 +100,6 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         net.to(device)
 
         model_path = os.path.join(experiment_path, net_name)
-        categorical_metrics = {}
 
         if os.path.exists(f'{model_path}.pth') and restore_prev == True:
             print('Restored weights!')
@@ -111,9 +108,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             
             training_metrics, validation_metrics, test_metrics = load_metrics(model_path)
             
-            if not generate_plots:
-                categorical_metrics = load_categorical_metrics(model_path)
-                aggregate_categorical.append(categorical_metrics)
+
         else: 
             os.makedirs(model_path, exist_ok=True)
 
@@ -122,40 +117,15 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             create_tables(training_metrics, validation_metrics, test_metrics, os.path.join(model_path, 'tables'))
 
         
+        test_metrics = evaluate_net_predictions(net, criterion, test_set_loader)
         create_loss_accuracy_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
         examine_subset(net, net_name, test_dataset, 10, device, os.path.join(model_path, 'figures'))
         
         predictions = get_predictions(net, test_dataset)
         predictions_dict[fusion] = predictions
+          
         
-        if dataset_name == "CSCD" and generate_plots:
-            categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, ["large_change_uniform", "large_change_non_uniform", "small_change_non_uniform", "small_change_uniform"])
-            aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
-        if dataset_name == "HRSCD"and generate_plots:
-            categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, ["No information", "Artificial surfaces", "Agricultural areas", 
-                                                                                    "Forests", "Wetlands", "Water"])
-            aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
-        if dataset_name == "HIUCD"and generate_plots:
-            categorical_metrics = evaluate_categories(dataset_name, test_set, predictions,["Unlabeled", "Water", "Grass", "Building", "Green house", 
-                                                                                    "Road", "Bridge", "Others", "Bare land", "Woodland"])
-            aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
-        if dataset_name == "LEVIR" and generate_plots:
-            categorical_metrics = evaluate_categories(dataset_name, test_set, predictions, [])
-            aggregate_categorical.append(categorical_metrics)
-            create_categorical_tables(categorical_metrics, os.path.join(model_path, 'tables'))
-            
-    
-        
-    
-    if generate_plots:
-        with open(os.path.join(experiment_path, 'aggregate_categorical.csv'), 'w', newline='') as csv_file:
-            fieldnames = aggregate_categorical[0].keys()
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(aggregate_categorical)
+
     
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
@@ -163,20 +133,14 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     perform_statistical_tests(dataset_name, ground_truth, predictions_dict, experiment_path, p_val=0.05)
     aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
     
-    if dataset_name == "CSCD" or dataset_name == "HRSCD" or dataset_name == "HIUCD":
-        aggregate_category_histograms(dataset_name, 'Aggregate Categorical', aggregate_categorical, os.path.join(experiment_path))
-    compare_number_of_buildings(dataset_name, '# Predicted Buildings', aggregate_categorical, os.path.join(experiment_path))
+
     
 
 def get_dataset(dataset_name, dirname, mode, FP_MODIFIER, patch_side=96, transform=None):
     if dataset_name == 'LEVIR':
         return LEVIR_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
-    elif dataset_name == 'HRSCD':
-        return HRSCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
     elif dataset_name == 'CSCD':
         return CSCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
-    elif dataset_name == 'HIUCD':
-        return HIUCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=patch_side, transform=transform)
     else:
         raise ValueError("Unknown dataset name")
     
