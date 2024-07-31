@@ -23,9 +23,14 @@ from sklearn.cluster import KMeans
 def calculate_distances(dataset_name, ground_truth, predictions):
     ground_truth_distances = []
     predictions_distances = {}
+    kernel = np.ones((3, 3), np.uint8)
     
     for img in ground_truth:
-        contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        blurred_image = cv2.GaussianBlur(img.astype(np.uint8), (5, 5), 0)
+        _, binary_image = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        cleaned_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel, iterations=2)
+            
+        contours, hierarchy = cv2.findContours(cleaned_image.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         distances = []
         for cnt in contours:
             M1 = cv2.moments(cnt)
@@ -68,7 +73,11 @@ def calculate_distances(dataset_name, ground_truth, predictions):
         predictions_distances[k] = []
         for img in predictions[k]:
             
-            contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            blurred_image = cv2.GaussianBlur(img.astype(np.uint8), (5, 5), 0)
+            _, binary_image = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            cleaned_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel, iterations=2)
+            
+            contours, hierarchy = cv2.findContours(cleaned_image.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             distances = []
             
             for cnt in contours:

@@ -8,6 +8,10 @@ import os
 import csv
 import shutil
 
+from distance import calculate_distances
+from num_objects import calculate_num_objects
+from sizes import calculate_sizes
+
 def give_random_colors():
     
     color1 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
@@ -18,6 +22,7 @@ def give_random_colors():
         color2 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     
     return color1, color2
+
 
 
 
@@ -204,13 +209,42 @@ labels = []
 situation_label = []
 
 change_methods = [large_changes, small_change]
-# sets = ['illustration']
+
+def read_dataset_properties(images):
+    numbers = calculate_num_objects('', images)
+    densities = calculate_distances('', images, {})
+    sizes = calculate_sizes('', images, {})
+    
+    return numbers, densities, sizes 
+
+#assumes equal density between every building in image 
+def calculate_radius(n, density, beta = 0.05 ):
+    return np.divide(np.log(np.divide(n, density)), beta)
+
+def sample_dataset_properties(numbers, densities, sizes):
+    num_buildings = random.choice(numbers)
+    radius = calculate_radius(num_buildings, random.choice(densities))
+    size = random.choice(sizes)
+    
+    return num_buildings, radius, size
+
+def poisson_disk_sampling(num_buildings, img, radius, area):
+    pass 
+
+
+
+
+
+gt_images = [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label'))] 
+gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label'))] 
+gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label'))] 
+
+numbers, radiuses, sizes = read_dataset_properties(gt_images)
+
 sets = ['train', 'test', 'val']
 sizes = []
-# sizes = [64, 32, 32]
-# sizes = [608, 208, 208]
+
 sizes = [2048, 512, 512]
-# os.makedirs(os.path.join('..', 'data', 'Visualization'), exist_ok=True)
 os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
 for i, set in enumerate(sets):
     set_path = os.path.join('..', 'data', 'CSCD', set)
@@ -282,9 +316,7 @@ for i, set in enumerate(sets):
 
 
 cscd_dir = os.path.join('..', 'data', 'CSCD')
-# cscd_dir = os.path.join('..', 'data', 'CSCD-Toy')
-# zip_filename = os.path.join('..', 'data', 'CSCD')
-zip_filename = os.path.join('..', 'data', 'CSCD-Toy')
+zip_filename = os.path.join('..', 'data', 'CSCD')
 shutil.make_archive(base_name=zip_filename, format='zip', root_dir=cscd_dir)
 
 

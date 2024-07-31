@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+
 # Credit: https://github.com/clcarwin/focal_loss_pytorch
 
 class FocalLoss(nn.Module):

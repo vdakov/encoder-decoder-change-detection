@@ -8,6 +8,7 @@ from num_objects import calculate_num_objects
 from plots import plot_comparison_histogram
 from sizes import calculate_sizes
 
+
 #=========================
 # The t-test of two-related groups is applied to the measurements of the inter-object distance, object size and on the num changes. 
 # The null hypothesis in all cases is that the mean between all fusion architectures for the given metrics are the same. 
@@ -95,6 +96,8 @@ def perform_statistical_tests(dataset_name, ground_truth, predictions_dict, save
     gt_spread , _ = calculate_distances(dataset_name, ground_truth, {})
     gt_sizes , _ = calculate_sizes(dataset_name, ground_truth, {})
     
+    print(gt_num_changes)
+    
 
     
     predictions_num_changes = {}   
@@ -104,13 +107,13 @@ def perform_statistical_tests(dataset_name, ground_truth, predictions_dict, save
     _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
     
     print(predictions_num_changes)
-    print(predictions_spread)
-    print(predictions_sizes)
-    
+
     
     hypothesis_test_num_changes(dataset_name, gt_num_changes, predictions_num_changes, os.path.join(save_path, 't_test_num_changes.txt'), p_val)
     hypothesis_test_object_spread(dataset_name, gt_spread, predictions_spread, os.path.join(save_path, 't_test_spread.txt'), p_val)
     hypothesis_test_object_size(dataset_name, gt_sizes, predictions_sizes, os.path.join(save_path, 't_test_size.txt'), p_val)
+    
+    
     
     
     for key in predictions_dict.keys():
@@ -134,14 +137,14 @@ def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_di
 
     _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
     
-    os.makedirs(os.path.join(save_path, 'kdes'))
-    os.makedirs(os.path.join(save_path, 'histograms'))
-    os.makedirs(os.path.join(save_path, 'cdfs'))
+    os.makedirs(os.path.join(save_path, 'kdes'), exist_ok=True)
+    os.makedirs(os.path.join(save_path, 'histograms'), exist_ok=True)
+    os.makedirs(os.path.join(save_path, 'cdfs'), exist_ok=True)
 
         
-    compare_distributions_num_changes(dataset_name, gt_num_changes, predictions_num_changes, colors, os.path.join(save_path, f'{dataset_name}aggregated_dist_num_changes.png'))
-    compare_distributions_spread(dataset_name, gt_spread, predictions_spread, colors, os.path.join(save_path, f'{dataset_name}-aggregated_dist_spread.png'))  
-    compare_distributions_sizes(dataset_name, gt_sizes, predictions_sizes, colors, os.path.join(save_path, f'{dataset_name}-aggregated_dist_sizes.png'))  
+    compare_distributions_num_changes(dataset_name, gt_num_changes, predictions_num_changes, colors, save_path, f'{dataset_name}aggregated_dist_num_changes.png')
+    compare_distributions_spread(dataset_name, gt_spread, predictions_spread, colors, save_path, f'{dataset_name}-aggregated_dist_spread.png') 
+    compare_distributions_sizes(dataset_name, gt_sizes, predictions_sizes, colors, save_path, f'{dataset_name}-aggregated_dist_sizes.png')  
     
     
     

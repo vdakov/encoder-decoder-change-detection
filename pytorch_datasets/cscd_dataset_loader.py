@@ -23,6 +23,7 @@ import csv
 import torch
 
 
+
 class CSCD_Dataset(Dataset):
 
     def __init__(self, dirname, set_name, FP_MODIFIER, patch_side = 96, transform=None):
@@ -138,5 +139,4 @@ class CSCD_Dataset(Dataset):
             sample = self.transform(sample)
 
         return sample
-
 

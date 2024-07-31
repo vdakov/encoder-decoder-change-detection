@@ -69,6 +69,7 @@ class LEVIR_Dataset(Dataset):
             self.n_patches_per_image[img_name] = n_patches_i
             self.n_patches += n_patches_i
             
+            
             # generate path coordinates
             for i in range(n1):
                 for j in range(n2):

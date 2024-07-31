@@ -48,6 +48,7 @@ def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, 
 
         scheduler.step()
 
+
         train_metrics.append(evaluate_net_predictions(net, criterion, train_loader))
         if not skip_val:
             curr_val_metrics = evaluate_net_predictions(net, criterion, val_loader)

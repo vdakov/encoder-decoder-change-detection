@@ -131,28 +131,29 @@ def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, s
     plt.savefig(save_path.split(".")[0] + "_cdf.png")
     plt.show()
     
-def compare_distributions_num_changes(dataset_name, ground_truth, predictions, colors, save_path):
-    save_path_kde = os.path.join(save_path, 'kdes')
-    save_path_histograms = os.path.join(save_path, 'histograms')
-    save_path_cdf = os.path.join(save_path, 'cdfs')
+def compare_distributions_num_changes(dataset_name, ground_truth, predictions, colors, save_path, img_name):
+    save_path_kde = os.path.join(save_path, 'kdes', img_name)
+    save_path_histograms = os.path.join(save_path, 'histograms', img_name)
+    save_path_cdf = os.path.join(save_path, 'cdfs', img_name)
     
     compare_distributions(dataset_name, ground_truth, predictions, colors, save_path_histograms, '#Num Changes', 'Frequency')
     compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path_kde, '#Num Changes', 'Frequency')
     compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, '#Num Changes', 'Frequency')
 
-def compare_distributions_sizes(dataset_name, ground_truth, predictions, colors, save_path):
-    save_path_kde = os.path.join(save_path, 'kdes')
-    save_path_histograms = os.path.join(save_path, 'histograms')
-    save_path_cdf = os.path.join(save_path, 'cdfs')
+
+def compare_distributions_sizes(dataset_name, ground_truth, predictions, colors, save_path, img_name):
+    save_path_kde = os.path.join(save_path, 'kdes', img_name)
+    save_path_histograms = os.path.join(save_path, 'histograms', img_name)
+    save_path_cdf = os.path.join(save_path, 'cdfs', img_name)
     
     compare_distributions(dataset_name, ground_truth, predictions, colors, save_path_histograms, 'Change Size', 'Frequency')
     compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path_kde, 'Change Size', 'Frequency')
     compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, 'Change Size', 'Frequency')
 
-def compare_distributions_spread(dataset_name, ground_truth, predictions, colors, save_path):
-    save_path_kde = os.path.join(save_path, 'kdes')
-    save_path_histograms = os.path.join(save_path, 'histograms')
-    save_path_cdf = os.path.join(save_path, 'cdfs')
+def compare_distributions_spread(dataset_name, ground_truth, predictions, colors, save_path, img_name):
+    save_path_kde = os.path.join(save_path, 'kdes', img_name)
+    save_path_histograms = os.path.join(save_path, 'histograms', img_name)
+    save_path_cdf = os.path.join(save_path, 'cdfs', img_name)
     
     compare_distributions(dataset_name, ground_truth, predictions, colors, save_path_histograms, 'Connectedness', 'Frequency')
     compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path_kde, 'Connectedness', 'Frequency')

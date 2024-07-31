@@ -16,6 +16,7 @@ n = 4
 # Create a list of n distinct colors
 arr = plt.cm.viridis(np.linspace(0, 1, n))
 
+
 colors = {
     "FC-EF": arr[0], 
     "FC-Siam-Conc.":  arr[1], 
