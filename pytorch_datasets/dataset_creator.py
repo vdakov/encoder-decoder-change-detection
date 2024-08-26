@@ -222,14 +222,91 @@ def calculate_radius(n, density, beta = 0.05 ):
     return np.divide(np.log(np.divide(n, density)), beta)
 
 def sample_dataset_properties(numbers, densities, sizes):
-    num_buildings = random.choice(numbers)
+    std_num_buildings = np.std(numbers)
+    d = random.choice(densities)
+    std_radius = calculate_radius(num_buildings, np.std(densities))
+    num_buildings = random.choice(numbers) 
     radius = calculate_radius(num_buildings, random.choice(densities))
     size = random.choice(sizes)
+    std_size = np.std(sizes)
     
-    return num_buildings, radius, size
+    return num_buildings, radius, size, std_num_buildings, std_radius, std_size
 
-def poisson_disk_sampling(num_buildings, img, radius, area):
-    pass 
+def poisson_disk_sampling(num_buildings, img, area, radius, std_radius):
+    '''
+    Algorithm borrowed from https://sighack.com/post/poisson-disk-sampling-bridsons-algorithm. 
+    It samples building a radius, equal to the density of the sampled image. The result should be approximately an image with that density. This radius should be 
+    one standard deviation from the given density.
+    '''
+    points = [] 
+    active = []
+    N = 2
+    width, height = img.shape
+    
+    cellsize = math.floor(radius/np.sqrt(N));
+    ncells_width = math.ceil(width/cellsize) + 1
+    ncells_height = math.ceil(height/cellsize) + 1
+    
+    grid = [[False for i in range(ncells_width)] for j in range(ncells_height)] #initialize 2D grid
+    
+    def insert_point(grid, p):
+        x, y = p
+        xindex = int(math.floor(x / cellsize))
+        yindex = int(math.floor(y / cellsize))
+        grid[xindex, yindex] = p
+        
+    def isValidPoint(grid, cellsize, gwidth, gheight, p, radius):
+                # Make sure the point is on the screen 
+        x, y = p
+        if (x < 0 or x >= width or y < 0 or y >= height):
+            return False
+
+        xindex = math.floor(x / cellsize);
+        yindex = math.floor(y / cellsize);
+        i0 = max(xindex - 1, 0);
+        i1 = min(xindex + 1, gwidth - 1);
+        j0 = max(yindex - 1, 0);
+        j1 = min(yindex + 1, gheight - 1);
+
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
+                if grid[i][j] is not None:
+                    #euclidean distance
+                    if np.linalg.norm(grid[i][j].x, grid[i][j].y, p.x, p.y) < radius:
+                        return False
+
+
+        return True
+
+    
+    x0, y0 = random(width), random(height)
+    insert_point(grid, (x0, y0))
+    points.append((x0, y0))
+    active.append((x0, y0))
+    
+    while len(active) > 0:
+        random_index = random(len(active))
+        p = active[random_index]
+        x, y = p
+        
+        found = False
+        # no K for rejection parameter as we want an exact number of points -> i.g. an "adaptation of the Poisson disk sampling"
+        while not found:
+            theta = random(360);
+            new_radius = random(radius - std_radius, radius + std_radius);
+            pnewx = x + new_radius * np.cos(np.radians(theta));
+            pnewy = y + new_radius * np.sin(np.radians(theta));
+            pnew = (pnewx, pnewy)
+            
+            if not isValidPoint(grid, cellsize, ncells_width, ncells_height, pnew, radius):
+                continue
+            found = True 
+            
+            
+    
+    return points
+
+    
 
 
 
