@@ -32,10 +32,7 @@ def get_number_of_objects(img):
 
 def calculate_num_objects(dataset_name, dataset):
 
-    num_objects = []
-    for img in dataset:
-        num_objects.append(get_number_of_objects(img))
-    return num_objects
+    return [get_number_of_objects(img) for img in dataset]
 
 
 
