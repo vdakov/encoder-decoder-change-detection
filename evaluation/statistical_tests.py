@@ -9,119 +9,74 @@ from plots import plot_comparison_histogram
 from sizes import calculate_sizes
 
 
-#=========================
-# The t-test of two-related groups is applied to the measurements of the inter-object distance, object size and on the num changes. 
-# The null hypothesis in all cases is that the mean between all fusion architectures for the given metrics are the same. 
-# The reason we use the correlated groups t-test is because the predictions come from the same ground truth data. 
-#=========================
-
-def hypothesis_test_num_changes(dataset_name, ground_truth, predictions, output_file, p_val = 0.05):
-    gt_mu = np.mean(ground_truth)
+def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05):
+    '''
+    Compute the Kruskal-Wallis H-test for all of our predictions in terms of size, number and spread per fusion architecture.
+    The Kruskal-Wallis H-test tests the null hypothesis that the population median of all of the groups are equal. It is a non-parametric version of ANOVA. It
+    indicates that *at least one* sample stochastically dominates the other. 
+    The test works on 2 or more independent samples, which may have different sizes. Note that rejecting the null hypothesis does not indicate which of the groups differs. 
+    Post hoc comparisons between groups are required to determine which groups are different.
+    '''
     rejected = False
+    
+    predictions_list = []
+    for fusion in predictions.keys():
+        predictions_list.append(predictions[fusion])
     
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
-        file.write(f'Ground truth mean: {gt_mu}\n')
-        
-        for k1 in predictions.keys():
-            for k2 in predictions.keys():
-                if k1 == k2:
-                    continue
-                t_test, p = stats.ttest_rel(predictions[k1], predictions[k2])
-                
-                file.write(f'{k1}: {np.mean(predictions[k1])}\n')
-                
-                if p < p_val:
-                    rejected = True
+        h_statistic, p = stats.kruskal(predictions_list)
+            
+        if p < p_val:
+            rejected = True
         
         if not rejected:
-            file.write('Accept the null hypothesis about the number of changes!\n')
+            file.write(f'Accept the null hypothesis with an H={h_statistic}!\n')
         else:
-            file.write('Reject the null hypothesis about the number of changes!\n')
+            file.write(f'Reject the null hypothesis with an H={h_statistic}!\n')
             
-            
-def hypothesis_test_object_size(dataset_name, ground_truth, predictions, output_file, p_val = 0.05):
-    gt_mu = np.mean(ground_truth)
-    rejected = False
-    
-    with open(output_file, 'w') as file:
-        file.write(f'Dataset: {dataset_name}\n')
-        file.write(f'Ground truth mean: {gt_mu}\n')
-        
-        for k1 in predictions.keys():
-            for k2 in predictions.keys():
-                if k1 == k2:
-                    continue
-                t_test, p = stats.ttest_rel(predictions[k1], predictions[k2])
-                
-                file.write(f'{k1}: {np.mean(predictions[k1])}\n')
-                
-                if p < p_val:
-                    rejected = True
-        
-        if not rejected:
-            file.write('Accept the null hypothesis about the number of changes!\n')
-        else:
-            file.write('Reject the null hypothesis about the number of changes!\n')
-            
-def hypothesis_test_object_spread(dataset_name, ground_truth, predictions, output_file, p_val = 0.05):
-    gt_mu = np.mean(ground_truth)
-    rejected = False
+    return rejected 
 
-    with open(output_file, 'w') as file:
-        file.write(f'Dataset: {dataset_name}\n')
-        file.write(f'Ground truth mean: {gt_mu}\n')
-        
-        for k1 in predictions.keys():
-            for k2 in predictions.keys():
-                if k1 == k2:
-                    continue
-                t_test, p = stats.ttest_rel(predictions[k1], predictions[k2])
-                
-                file.write(f'{k1}: {np.mean(predictions[k1])}\n')
-                
-                if p < p_val:
-                    rejected = True
-        
-        if not rejected:
-            file.write('Accept the null hypothesis about the number of changes!\n')
-        else:
-            file.write('Reject the null hypothesis about the number of changes!\n')
             
             
-            
-def perform_statistical_tests(dataset_name, ground_truth, predictions_dict, save_path, p_val=0.05):
-    
-    gt_num_changes = calculate_num_objects(dataset_name, ground_truth)
-    gt_spread , _ = calculate_distances(dataset_name, ground_truth, {})
-    gt_sizes , _ = calculate_sizes(dataset_name, ground_truth, {})
-    
-    print(gt_num_changes)
+def perform_kruskal_wallis_per_metric(dataset_name, predictions_dict, save_path, p_val=0.05):
     
 
-    
     predictions_num_changes = {}   
     for key in predictions_dict.keys():
         predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
     _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
     _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
     
-    print(predictions_num_changes)
 
     
-    hypothesis_test_num_changes(dataset_name, gt_num_changes, predictions_num_changes, os.path.join(save_path, 't_test_num_changes.txt'), p_val)
-    hypothesis_test_object_spread(dataset_name, gt_spread, predictions_spread, os.path.join(save_path, 't_test_spread.txt'), p_val)
-    hypothesis_test_object_size(dataset_name, gt_sizes, predictions_sizes, os.path.join(save_path, 't_test_size.txt'), p_val)
+    num_changes_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_num_changes, os.path.join(save_path, 'kruskal_wallis_num_changes.txt'), p_val)
+    spread_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_spread, os.path.join(save_path, 'kruskal_wallis_spread.txt'), p_val)
+    sizes_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_sizes, os.path.join(save_path, 'kruskal_wallis_size.txt'), p_val)
     
+    if num_changes_first_order_sgd:
+        perform_post_hoc_comparison_first_order_sgd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(save_path, 'mann_whitney_num_changes.txt'), p_val)
+    if spread_first_order_sgd:
+        perform_post_hoc_comparison_first_order_sgd(dataset_name, 'spread', predictions_spread, os.path.join(save_path, 'mann_whitney_spread.txt'), p_val)
+    if sizes_first_order_sgd: 
+        perform_post_hoc_comparison_first_order_sgd(dataset_name, 'sizes', predictions_sizes, os.path.join(save_path, 'kruskal_wallis_num_changes.txt'), p_val)
     
+def perform_post_hoc_comparison_first_order_sgd(dataset_name, metric, predictions_dict, output_file, p_val=0.05):
     
+    with open(output_file, 'w') as file:
+        file.write(f'Dataset: {dataset_name}\n')
+        for k1 in predictions_dict.keys():
+            for k2 in predictions_dict.keys():
+                if k1 == k2: 
+                    continue
+
+                u_statistic, p = stats.mannwhitneyu(predictions_dict[k1], predictions_dict[k2], alternative='greater')
+                if p > p_val:
+                    file.write(f'{k1} first-order-stochastically dominates {k2} for {metric} with U={u_statistic}')
+                    
+            
+
     
-    for key in predictions_dict.keys():
-        
-        
-        plot_comparison_histogram(dataset_name, gt_num_changes, predictions_num_changes[key], os.path.join(save_path,  f'{key}_hist_num_changes.png'))
-        plot_comparison_histogram(dataset_name, gt_spread, predictions_spread[key], os.path.join(save_path, f'{key}_hist_spread.png'))
-        plot_comparison_histogram(dataset_name, gt_sizes, predictions_sizes[key], os.path.join(save_path, f'{key}_hist_sizes.png'))
     
     
 def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, save_path):
