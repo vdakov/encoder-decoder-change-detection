@@ -32,6 +32,11 @@ def give_random_colors():
     
     return color1, color2
 
+def adjust_brightness(image, factor):
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hsv[:, :, 2] = np.clip(hsv[:, :, 2] * factor, 0, 255)
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
 
 
 
@@ -44,7 +49,8 @@ def create_base_image(width, height, num_buildings, area, std_area, radius, std_
     for point in points:
 
         
-        obj_width, obj_height = randint(base_obj_width - np.sqrt(std_area), base_obj_width + np.sqrt(std_area)), randint(base_obj_height - np.sqrt(std_area), base_obj_height + np.sqrt(std_area))
+        obj_width, obj_height = randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area))), randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area)))
+        
         angle = randint(0, 360)
         x0, y0 = point
 
@@ -56,9 +62,9 @@ def create_base_image(width, height, num_buildings, area, std_area, radius, std_
         cv2.fillPoly(img, [box], (255, 255, 255))
 
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
-        img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-        img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
+        # img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+        # img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
     t1 = img.astype(np.uint8)
     
@@ -80,7 +86,7 @@ def change(t1, num_changes, area, std_area, radius, std_radius, active_points):
     for point in points:
 
         
-        obj_width, obj_height = randint(base_obj_width - np.sqrt(std_area), base_obj_width + np.sqrt(std_area)), randint(base_obj_height - np.sqrt(std_area), base_obj_height + np.sqrt(std_area))
+        obj_width, obj_height = randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area))), randint(int(base_obj_height - np.sqrt(std_area)), int(base_obj_height + np.sqrt(std_area)))
         angle = randint(0, 360)
         x0, y0 = point
 
@@ -92,11 +98,11 @@ def change(t1, num_changes, area, std_area, radius, std_radius, active_points):
         cv2.fillPoly(img, [box], (255, 255, 255))
 
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
-        img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-        img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
+        # img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+        # img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
         
-    t2 = np.logical_or(t1, t2)
+    t2 = np.logical_or(t1, img)
     t2 = t2.astype(np.uint8) * 255
 
     label = np.logical_xor(t1, t2).astype(np.uint8) * 255
@@ -149,7 +155,7 @@ def sample_dataset_properties(numbers, densities, sizes):
     
     return num_buildings, radius, size, std_num_buildings, std_radius, std_size
 
-def poisson_disk_sampling(img, num_buildings, radius, std_radius, active=[]):
+def poisson_disk_sampling(img, num_buildings, radius, std_radius, active_points=[]):
     '''
     Algorithm borrowed from https://sighack.com/post/poisson-disk-sampling-bridsons-algorithm. 
     It samples building a radius, equal to the density of the sampled image. The result should be approximately an image with that density. This radius should be 
@@ -157,19 +163,23 @@ def poisson_disk_sampling(img, num_buildings, radius, std_radius, active=[]):
     '''
     points = [] 
     N = 2
-    width, height = img.shape
+    width, height = img.shape[:2]
     
-    cellsize = math.floor(radius/np.sqrt(N));
-    ncells_width = math.ceil(width/cellsize) + 1
-    ncells_height = math.ceil(height/cellsize) + 1
+    # radius = randint(20, 40)
+    
+    
+    cellsize = max(math.floor(radius / np.sqrt(N)), 1)
+    ncells_width = math.ceil(width / cellsize) + 1
+    ncells_height = math.ceil(height / cellsize) + 1
     
     grid = [[False for i in range(ncells_width)] for j in range(ncells_height)] #initialize 2D grid
     
     def insert_point(grid, p):
         x, y = p
+        
         xindex = int(math.floor(x / cellsize))
         yindex = int(math.floor(y / cellsize))
-        grid[xindex, yindex] = p
+        grid[xindex][yindex] = p
         
     def isValidPoint(grid, cellsize, gwidth, gheight, p, radius):
                 # Make sure the point is on the screen 
@@ -188,36 +198,51 @@ def poisson_disk_sampling(img, num_buildings, radius, std_radius, active=[]):
             for j in range(j0, j1 + 1):
                 if grid[i][j] is not None:
                     #euclidean distance
-                    if np.linalg.norm(grid[i][j].x, grid[i][j].y, p.x, p.y) < radius:
+                    distance = np.linalg.norm(np.array(grid[i][j]) - np.array(p))
+                    if distance < radius:
                         return False
 
 
         return True
 
     
-    x0, y0 = random(width), random(height)
+    x0, y0 = random.randrange(0, width), random.randrange(height)
     insert_point(grid, (x0, y0))
     points.append((x0, y0))
-    active.append((x0, y0))
+    active_points.append((x0, y0))
+
     
     
-    while len(active) < num_buildings:
-        random_index = random(len(active))
-        p = active[random_index]
+    while len(points) < num_buildings and len(active_points) > 0:
+        random_index = random.randrange(0, len(active_points))
+        p = active_points[random_index]
         x, y = p
         
         found = False
-        # no K for rejection parameter as we want an exact number of points -> i.g. an "adaptation of the Poisson disk sampling"
-        while not found:
-            theta = random(360);
-            new_radius = random(radius - std_radius, radius + std_radius);
+        k = 0
+        
+        while k < 30:
+            
+            theta = randint(0, 360);
+            new_radius = random.uniform(radius - std_radius, radius + std_radius)
+            
             pnewx = x + new_radius * np.cos(np.radians(theta));
             pnewy = y + new_radius * np.sin(np.radians(theta));
             pnew = (pnewx, pnewy)
             
             if not isValidPoint(grid, cellsize, ncells_width, ncells_height, pnew, radius):
+                k += 1
                 continue
-            found = True 
+            
+            found = True
+            insert_point(grid, pnew)
+            points.append(pnew) 
+            active_points.append(pnew)
+            break
+            
+        if not found:
+            del active_points[random_index]
+            
             
             
     
@@ -233,9 +258,9 @@ gt_images = [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label',
 gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label'))] 
 gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label'))] 
 
-def save_properties(numbers, densities, sizes, filename='dataset_properties.pkl'):
+def save_properties(numbers, radiuses, sizes, filename='dataset_properties.pkl'):
     with open(filename, 'wb') as f:
-        pickle.dump((numbers, densities, sizes), f)
+        pickle.dump((numbers, radiuses, sizes), f)
 
 def load_properties(filename='dataset_properties.pkl'):
     with open(filename, 'rb') as f:
@@ -249,23 +274,32 @@ def read_dataset_properties(images, filename='dataset_properties.pkl'):
     else:
         # Compute the properties if the file does not exist
         numbers = calculate_num_objects('', images)
-        densities = calculate_distances('', images, {})
-        sizes = calculate_sizes('', images, {})
+        radiuses = calculate_distances('', images, {})[0]
+        sizes = calculate_sizes('', images, {})[0]
 
         # Save the properties to a file
-        save_properties(numbers, densities, sizes, filename)
-        return numbers, densities, sizes
+        save_properties(numbers, radiuses, sizes, filename)
+        return numbers, radiuses, sizes
 
 numbers, radiuses, sizes = read_dataset_properties(gt_images)
+
+
+
+
+sets = {'train' : 2048, 'test' : 512, 'val': 512}
+width = 256
+height = 256
+area = width * height
+sizes = np.multiply(sizes, np.ones(len(sizes)) * area)
+print(radiuses)
+radiuses = np.multiply(radiuses, np.ones(len(radiuses)) * area)
 std_radius = np.sqrt(np.var(radiuses))
 std_area = np.sqrt(np.var(sizes))
 
-sets = {'train' : 2048, 'test' : 512, 'val': 512}
-sizes = []
 
 num_imgs = [2048, 512, 512]
 os.makedirs(os.path.join('..', 'data', 'CSCD'), exist_ok=True)
-for set in enumerate(sets.keys()):
+for set in sets.keys():
     set_path = os.path.join('..', 'data', 'CSCD', set)
     t1_dir = os.path.join(set_path, 'A')
     t2_dir = os.path.join(set_path, 'B')
@@ -282,7 +316,7 @@ for set in enumerate(sets.keys()):
     for _ in range(int(sets[set])):
     
 
-        time_1, active_points = create_base_image(128, 128, random.choice(numbers), random.choice(sizes), std_area, random.choice(radiuses), std_radius)
+        time_1, active_points = create_base_image(width, height, random.choice(numbers) // 2, random.choice(sizes), std_area, random.choice(radiuses), std_radius)
         num_changes = random.choice(numbers)
         area = random.choice(sizes)
         radius = random.choice(radiuses)
@@ -292,6 +326,7 @@ for set in enumerate(sets.keys()):
         
         time_1 = recolor_img(time_1, bg_color, building_color)
         time_2 = recolor_img(time_2, bg_color, building_color)
+        time_2 = adjust_brightness(time_2, random.uniform(0.9, 1.1))
         time_1 = cv2.blur(time_1,(5,5))
         time_2 = cv2.blur(time_2,(5,5))
         
