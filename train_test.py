@@ -5,6 +5,8 @@ from metrics import evaluate_net_predictions
 from tqdm import tqdm as tqdm
 import time
 import numpy as np
+import json
+import os
 
 def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, device, n_epochs = 10, save = True, save_dir=f'{time.time()}.pth.tar', skip_val = True, early_stopping = True):
     '''
@@ -73,6 +75,14 @@ def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, 
             torch.save(best_model_weights, save_dir)
         else: 
             torch.save(net.state_dict(), save_dir)
+            
+        metrics_save_path = os.path.join(save_dir, 'metrics.json')
+        all_metrics = {
+            'train_metrics': train_metrics,
+            'val_metrics': val_metrics
+        }
+        with open(metrics_save_path, 'w') as f:
+            json.dump(all_metrics, f, indent=4)
 
 
     return train_metrics, val_metrics
