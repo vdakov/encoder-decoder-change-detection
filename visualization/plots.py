@@ -17,6 +17,7 @@ rcParams["font.family"] = "Times New Roman"
 
 
 
+
 def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model_name, save_path = None):
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
     

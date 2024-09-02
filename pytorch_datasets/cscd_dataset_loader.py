@@ -1,7 +1,7 @@
 from math import ceil
 import sys
 
-from num_objects import get_number_of_objects
+
 
 sys.path.insert(1, '../siamese_fcn')
 sys.path.insert(1, '../pytorch_datasets')
@@ -11,7 +11,7 @@ sys.path.insert(1, '../visualization')
 sys.path.insert(1, '..')
 sys.path.insert(1, '../preprocessing')
 
-
+from num_objects import get_number_of_objects
 from torch.utils.data import Dataset
 import os
 from reshape import reshape_for_torch
@@ -21,6 +21,7 @@ import cv2
 import os
 import csv
 import torch
+
 
 
 class CSCD_Dataset(Dataset):
@@ -138,5 +139,4 @@ class CSCD_Dataset(Dataset):
             sample = self.transform(sample)
 
         return sample
-
 

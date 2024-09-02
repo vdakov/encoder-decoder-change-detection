@@ -58,3 +58,4 @@ def plot_loss(experiment_name, fusions, colors):
     plt.savefig(os.path.join(path, 'aggregated_loss.png'))
     plt.show()
     
+

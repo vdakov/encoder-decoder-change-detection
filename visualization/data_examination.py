@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import numpy as np
 
 
-def examine_subset(net, model_name, dataset, num_samples, device, save_path=None):
+def examine_subset(net, model_name, dataset, num_samples, device, data_loader, save_path=None):
 
     p, q = num_samples // 4, 4
 
@@ -15,11 +15,7 @@ def examine_subset(net, model_name, dataset, num_samples, device, save_path=None
     outer = gridspec.GridSpec(num_samples // 4, 4)
     fig.suptitle(model_name, fontsize=16)
 
-    indices = torch.randperm(len(dataset)).tolist()[:num_samples]
-    sampler = SubsetRandomSampler(indices)
-
     batch_size = 1
-    data_loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler)
 
     k = 0
     for i in range(p):
@@ -55,6 +51,7 @@ def examine_subset(net, model_name, dataset, num_samples, device, save_path=None
             ax2.set_title('T2')
             ax2.axis('off')
             fig.add_subplot(ax2)
+
 
             ax3 = plt.Subplot(fig, inner[1, 0])
             ax3.imshow(label, cmap='gray')

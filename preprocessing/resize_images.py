@@ -19,6 +19,7 @@ def get_args():
     parser.add_argument("--resize_ratio", type=float, default = 1)
     
     
+    
     return parser.parse_args()
 
 

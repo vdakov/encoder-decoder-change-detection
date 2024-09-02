@@ -32,6 +32,7 @@ def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
         tot_loss += loss.item()
         
         predicted_labels  = torch.exp(output_batch[:, 1, :, :])
+        predicted_labels = (predicted_labels > 0.5).long()
             
         cm_batch_min = cm_batch.min(dim=1, keepdim=True)[0]
         cm_batch_max = cm_batch.max(dim=1, keepdim=True)[0]
@@ -44,6 +45,7 @@ def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
         #flatten the batches, but without the actual batch
         pr = predicted_labels.view(predicted_labels.size(0), -1)
         gt = gt_labels.view(gt_labels.size(0), -1)
+
   
         # # Calculate TP, TN, FP, FN for the entire batch
         # tp += (pr * gt).sum().item()
@@ -54,11 +56,11 @@ def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
         # print(pr.shape, gt.shape)
         iou_batch = compute_iou_batch(pr, gt)
         
-        tp += (iou_batch >= IOU_THRESHOLD).sum().item()
-        fp += (iou_batch < IOU_THRESHOLD).sum().item()
-        fn += (iou_batch < IOU_THRESHOLD).sum().item()
-
-
+        tp += iou_batch[0]
+        fp += iou_batch[1]
+        tn += iou_batch[2]
+        fn += iou_batch[3]
+        
     net_loss = tot_loss / len(dataset_loader.dataset)
     net_accuracy = 100 * (tp + tn) / (tp + tn + fp + fn + 1e-10)
     prec = tp /(tp + fp) if (tp + fp) != 0 else 0
@@ -75,13 +77,22 @@ def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
 
 
 def compute_iou_batch(predictions, ground_truth, IOU_THRESHOLD=0.5):
+
     intersection = (predictions * ground_truth).sum(dim=1)
     union = predictions.sum(dim=1) + ground_truth.sum(dim=1) - intersection
     #should be in shapes (batch size, intersection), (batch size, union)
     
     iou = intersection / (union + 1e-6)
     
-    return iou
+    tp = (iou >= IOU_THRESHOLD).sum().item()
+    fp = ((iou < IOU_THRESHOLD) & (intersection > 0)).sum().item()
+    tn = ((union == 0) & (intersection == 0)).sum().item()
+    fn = ((union > 0) & (intersection == 0)).sum().item()
+
+
+    
+    return [tp, fp, tn, fn]
+
 
 
 
