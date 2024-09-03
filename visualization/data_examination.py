@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import numpy as np
 
 
-def examine_subset(net, model_name, dataset, num_samples, device, data_loader, save_path=None):
+def examine_subset(net, model_name, num_samples, device, data_loader, save_path=None):
 
     p, q = num_samples // 4, 4
 

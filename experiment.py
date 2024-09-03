@@ -40,7 +40,7 @@ import argparse
 from aggregate_training_results import plot_loss
 import gc
 import json
-# from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
+from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
 
 
 
@@ -120,7 +120,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         create_tables(training_metrics, validation_metrics, test_metrics, os.path.join(model_path, 'tables'))
         create_loss_accuracy_figures(training_metrics, validation_metrics, test_metrics, net_name, os.path.join(model_path, 'figures'))
         visualization_loader = DataLoader(test_dataset, batch_size = 1, shuffle = True, num_workers = 1)
-        examine_subset(net, net_name, test_dataset, 10, device,  visualization_loader, save_path=os.path.join(model_path, 'figures'))
+
+        examine_subset(net, net_name, 10, device,  visualization_loader, save_path=os.path.join(model_path, 'figures'))
         
         predictions = get_predictions(net, test_dataset)
         predictions_dict[fusion] = predictions
@@ -131,8 +132,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
     ground_truth = get_ground_truth(test_dataset)
-    # perform_statistical_tests(dataset_name, ground_truth, predictions_dict, experiment_path, p_val=0.05)
-    # aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
+    perform_statistical_tests(dataset_name, predictions_dict, experiment_path, p_val=0.05)
+    aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
     
     
 

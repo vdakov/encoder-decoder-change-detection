@@ -120,6 +120,7 @@ def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, s
 
     plt.title(dataset_name)
     plt.xlabel(x_label)
+    
     plt.ylabel(y_label)
     
     xmin = 0
@@ -138,7 +139,7 @@ def compare_distributions_num_changes(dataset_name, ground_truth, predictions, c
     
     compare_distributions(dataset_name, ground_truth, predictions, colors, save_path_histograms, '#Num Changes', 'Frequency')
     compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path_kde, '#Num Changes', 'Frequency')
-    compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, '#Num Changes', 'Frequency')
+    compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, '#Num Changes', 'Probability')
 
 
 def compare_distributions_sizes(dataset_name, ground_truth, predictions, colors, save_path, img_name):
@@ -148,7 +149,7 @@ def compare_distributions_sizes(dataset_name, ground_truth, predictions, colors,
     
     compare_distributions(dataset_name, ground_truth, predictions, colors, save_path_histograms, 'Change Size', 'Frequency')
     compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path_kde, 'Change Size', 'Frequency')
-    compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, 'Change Size', 'Frequency')
+    compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, 'Change Size', 'Probability')
 
 def compare_distributions_spread(dataset_name, ground_truth, predictions, colors, save_path, img_name):
     save_path_kde = os.path.join(save_path, 'kdes', img_name)
@@ -157,4 +158,4 @@ def compare_distributions_spread(dataset_name, ground_truth, predictions, colors
     
     compare_distributions(dataset_name, ground_truth, predictions, colors, save_path_histograms, 'Connectedness', 'Frequency')
     compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path_kde, 'Connectedness', 'Frequency')
-    compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, 'Connectedness', 'Frequency')
+    compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path_cdf, 'Connectedness', 'Probability')

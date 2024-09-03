@@ -21,7 +21,12 @@ def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05)
     
     predictions_list = []
     for fusion in predictions.keys():
-        predictions_list.append(predictions[fusion])
+        if predictions[fusion]:  
+            print(predictions[fusion])
+            predictions_list.append(predictions[fusion])
+
+    if len(predictions_list) < 2:
+        raise ValueError("We need at least two groups in stats.kruskal()")
     
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
@@ -38,17 +43,10 @@ def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05)
     return rejected 
 
             
-            
-def perform_kruskal_wallis_per_metric(dataset_name, predictions_dict, save_path, p_val=0.05):
-    
-
-    predictions_num_changes = {}   
-    for key in predictions_dict.keys():
-        predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
-    _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
-    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
-    
-
+def perform_kruskal_wallis_and_fosd_per_metric(dataset_name, predictions_num_changes, predictions_spread,  predictions_sizes, save_path, p_val=0.05):
+    '''
+    Plain helper function for both Kruskal Wallis and 
+    '''
     
     num_changes_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_num_changes, os.path.join(save_path, 'kruskal_wallis_num_changes.txt'), p_val)
     spread_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_spread, os.path.join(save_path, 'kruskal_wallis_spread.txt'), p_val)
@@ -60,11 +58,6 @@ def perform_kruskal_wallis_per_metric(dataset_name, predictions_dict, save_path,
         perform_post_hoc_comparison_first_order_sd(dataset_name, 'spread', predictions_spread, os.path.join(save_path, 'first_order_sd_mann_whitney_spread.txt'), p_val)
     if sizes_first_order_sgd: 
         perform_post_hoc_comparison_first_order_sd(dataset_name, 'sizes', predictions_sizes, os.path.join(save_path, 'first_order_sd_mann_whitney_sizes.txt'), p_val)
-        
-    perform_post_hoc_comparison_second_order_sd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(save_path, 'second_order_sd_num_changes.txt'))
-    perform_post_hoc_comparison_second_order_sd(dataset_name, 'spread', predictions_spread, os.path.join(save_path, 'second_order_sd_spread.txt'))
-    perform_post_hoc_comparison_second_order_sd(dataset_name, 'sizes', predictions_sizes, os.path.join(save_path, 'second_order_sd_sizes.txt'), p_val)
-    
     
 def perform_post_hoc_comparison_first_order_sd(dataset_name, metric, predictions_dict, output_file, p_val=0.05):
     '''
@@ -126,6 +119,23 @@ def compute_edf(data):
     sorted_data = np.sort(data)
     cdf_probabilites = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
     return np.array([(x, y) for (x, y) in zip(sorted_data, cdf_probabilites)])
+
+
+def perform_statistical_tests(dataset_name, predictions_dict, experiment_path, p_val=0.05):
+    
+    
+    predictions_num_changes = {}   
+    for key in predictions_dict.keys():
+        predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
+    _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
+    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
+    
+    perform_kruskal_wallis_and_fosd_per_metric(dataset_name, predictions_num_changes, predictions_spread, predictions_sizes, experiment_path, p_val)
+    
+    
+    perform_post_hoc_comparison_second_order_sd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(experiment_path, 'second_order_sd_num_changes.txt'))
+    perform_post_hoc_comparison_second_order_sd(dataset_name, 'spread', predictions_spread, os.path.join(experiment_path, 'second_order_sd_spread.txt'))
+    perform_post_hoc_comparison_second_order_sd(dataset_name, 'sizes', predictions_sizes, os.path.join(experiment_path, 'second_order_sd_sizes.txt'))
     
     
     
