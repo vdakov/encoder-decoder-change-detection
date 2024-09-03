@@ -40,7 +40,7 @@ import argparse
 from aggregate_training_results import plot_loss
 import gc
 import json
-from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
+# from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
 
 
 
@@ -131,8 +131,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
     ground_truth = get_ground_truth(test_dataset)
-    perform_statistical_tests(dataset_name, ground_truth, predictions_dict, experiment_path, p_val=0.05)
-    aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
+    # perform_statistical_tests(dataset_name, ground_truth, predictions_dict, experiment_path, p_val=0.05)
+    # aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
     
     
 

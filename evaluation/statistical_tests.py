@@ -55,13 +55,28 @@ def perform_kruskal_wallis_per_metric(dataset_name, predictions_dict, save_path,
     sizes_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_sizes, os.path.join(save_path, 'kruskal_wallis_size.txt'), p_val)
     
     if num_changes_first_order_sgd:
-        perform_post_hoc_comparison_first_order_sgd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(save_path, 'mann_whitney_num_changes.txt'), p_val)
+        perform_post_hoc_comparison_first_order_sd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(save_path, 'first_order_sd_mann_whitney_num_changes.txt'), p_val)
     if spread_first_order_sgd:
-        perform_post_hoc_comparison_first_order_sgd(dataset_name, 'spread', predictions_spread, os.path.join(save_path, 'mann_whitney_spread.txt'), p_val)
+        perform_post_hoc_comparison_first_order_sd(dataset_name, 'spread', predictions_spread, os.path.join(save_path, 'first_order_sd_mann_whitney_spread.txt'), p_val)
     if sizes_first_order_sgd: 
-        perform_post_hoc_comparison_first_order_sgd(dataset_name, 'sizes', predictions_sizes, os.path.join(save_path, 'kruskal_wallis_num_changes.txt'), p_val)
+        perform_post_hoc_comparison_first_order_sd(dataset_name, 'sizes', predictions_sizes, os.path.join(save_path, 'first_order_sd_mann_whitney_sizes.txt'), p_val)
+        
+    perform_post_hoc_comparison_second_order_sd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(save_path, 'second_order_sd_num_changes.txt'))
+    perform_post_hoc_comparison_second_order_sd(dataset_name, 'spread', predictions_spread, os.path.join(save_path, 'second_order_sd_spread.txt'))
+    perform_post_hoc_comparison_second_order_sd(dataset_name, 'sizes', predictions_sizes, os.path.join(save_path, 'second_order_sd_sizes.txt'), p_val)
     
-def perform_post_hoc_comparison_first_order_sgd(dataset_name, metric, predictions_dict, output_file, p_val=0.05):
+    
+def perform_post_hoc_comparison_first_order_sd(dataset_name, metric, predictions_dict, output_file, p_val=0.05):
+    '''
+    A test for first-order stochastic dominance between pairs, in case Kruskal-Wallis shows there is a need for it. 
+    The Mann-Whitney test is a non-parametric measure of this as it makes no assumptions about the underlying distribution of the 
+    data. 
+    
+    Sources:
+    -https://ocw.mit.edu/courses/14-123-microeconomic-theory-iii-spring-2015/875150f8deb05a910756a02a4f9f78a5_MIT14_123S15_Chap4.pdf
+    -https://en.wikipedia.org/wiki/Stochastic_dominance#
+    
+    '''
     
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
@@ -69,13 +84,48 @@ def perform_post_hoc_comparison_first_order_sgd(dataset_name, metric, prediction
             for k2 in predictions_dict.keys():
                 if k1 == k2: 
                     continue
+                
+   
 
                 u_statistic, p = stats.mannwhitneyu(predictions_dict[k1], predictions_dict[k2], alternative='greater')
                 if p > p_val:
                     file.write(f'{k1} first-order-stochastically dominates {k2} for {metric} with U={u_statistic}')
                     
-            
-
+def perform_post_hoc_comparison_second_order_sd(dataset_name, metric, predictions_dict, output_file):
+    '''
+    In case Kruskal-Wallis finds nothing (since first order SD is sufficient for the second order), we will test for 
+    SOSD via the integral theorem between all edfs. 
+    
+    Sources: 
+        https://github.com/jamlamberti/Py4FinOpt/blob/master/02_Stochastic_Dominance.ipynb
+        https://en.wikipedia.org/wiki/Stochastic_dominance#
+        https://ocw.mit.edu/courses/14-123-microeconomic-theory-iii-spring-2015/875150f8deb05a910756a02a4f9f78a5_MIT14_123S15_Chap4.pdf
+    '''
+    edfs = {}
+    for k in predictions_dict.keys():
+        edfs[k] = compute_edf(predictions_dict[k])
+        
+    any_dominance = False 
+        
+    with open(output_file, 'w') as file:
+        file.write(f'Dataset: {dataset_name}\n')
+        for k1 in edfs.keys():
+            for k2 in edfs.keys():
+                if k1 == k2: 
+                    continue
+                points = np.sort(np.union1d(edfs[k1], edfs[k2]))
+                k1_integral_area = np.cumsum([edfs[k1] * (points[i+1] - points[i]) for i in range(len(points) - 1)])
+                k2_integral_area = np.cumsum([edfs[k2] * (points[i+1] - points[i]) for i in range(len(points) - 1)])
+                k1_sosd_k2 = all(map(lambda x, y : x <= y, k1_integral_area, k2_integral_area))
+                if k1_sosd_k2:
+                    file.write(f'{k1} second-order-stochastically dominates {k2} for {metric}!')
+                    
+    
+def compute_edf(data):
+    
+    sorted_data = np.sort(data)
+    cdf_probabilites = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+    return np.array([(x, y) for (x, y) in zip(sorted_data, cdf_probabilites)])
     
     
     

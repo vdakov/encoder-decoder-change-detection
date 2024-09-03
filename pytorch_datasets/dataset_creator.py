@@ -330,20 +330,20 @@ for set in sets.keys():
         time_1 = cv2.blur(time_1,(5,5))
         time_2 = cv2.blur(time_2,(5,5))
         
-        cv2.imshow('Time 1', time_1)
-        cv2.imshow('Time 2', time_2)
-        cv2.imshow('Label', label)
+        # cv2.imshow('Time 1', time_1)
+        # cv2.imshow('Time 2', time_2)
+        # cv2.imshow('Label', label)
         
         # Move windows to avoid overlap (positioning them side by side)
-        cv2.moveWindow('Time 1', 100, 100)  # Move 'Time 1' window to (100, 100)
-        cv2.moveWindow('Time 2', 300, 100)  # Move 'Time 2' window to (300, 100)
-        cv2.moveWindow('Label', 500, 100)   # Move 'Label' window to (500, 100)
+        # cv2.moveWindow('Time 1', 100, 100)  # Move 'Time 1' window to (100, 100)
+        # cv2.moveWindow('Time 2', 300, 100)  # Move 'Time 2' window to (300, 100)
+        # cv2.moveWindow('Label', 500, 100)   # Move 'Label' window to (500, 100)
         
         # Wait for a key press and move to the next set of images
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
         
-        # Close the display windows to prepare for the next images
-        cv2.destroyAllWindows()
+        # # Close the display windows to prepare for the next images
+        # cv2.destroyAllWindows()
         
 
         
