@@ -2,7 +2,7 @@ import os
 import numpy as np 
 from scipy import stats
 
-from distance import calculate_distances
+from distance import calculate_connectedness, calculate_distances
 from hypothesis_histograms import compare_distributions_num_changes, compare_distributions_sizes, compare_distributions_spread
 from num_objects import calculate_num_objects
 from plots import plot_comparison_histogram
@@ -18,19 +18,18 @@ def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05)
     Post hoc comparisons between groups are required to determine which groups are different.
     '''
     rejected = False
-    
     predictions_list = []
     for fusion in predictions.keys():
         if predictions[fusion]:  
-            print(predictions[fusion])
             predictions_list.append(predictions[fusion])
-
-    if len(predictions_list) < 2:
-        raise ValueError("We need at least two groups in stats.kruskal()")
+            
+    assert len(predictions_list) >= 2
+    output_dir = os.path.dirname(output_file)
+    assert os.path.exists(output_dir)
     
     with open(output_file, 'w') as file:
-        file.write(f'Dataset: {dataset_name}\n')
-        h_statistic, p = stats.kruskal(predictions_list)
+        file.write(f'Dataset: {dataset_name}\n')    
+        h_statistic, p = stats.kruskal(*predictions_list)
             
         if p < p_val:
             rejected = True
@@ -73,16 +72,23 @@ def perform_post_hoc_comparison_first_order_sd(dataset_name, metric, predictions
     
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
+        keys = list(predictions_dict.keys())
+        seen = set()
         for k1 in predictions_dict.keys():
             for k2 in predictions_dict.keys():
-                if k1 == k2: 
+                if k1 == k2 or (k1, k2) in seen or (k2, k1) in seen:
                     continue
-                
-   
+                seen.add((k1, k2))
+                u_statistic_1, p_1 = stats.mannwhitneyu(predictions_dict[k1], predictions_dict[k2], alternative='greater')
+                u_statistic_2, p_2 = stats.mannwhitneyu(predictions_dict[k2], predictions_dict[k1], alternative='greater')
 
-                u_statistic, p = stats.mannwhitneyu(predictions_dict[k1], predictions_dict[k2], alternative='greater')
-                if p > p_val:
-                    file.write(f'{k1} first-order-stochastically dominates {k2} for {metric} with U={u_statistic}')
+                if p_1 <= p_val:
+                    file.write(f'{k1} first-order-stochastically dominates {k2} with U={u_statistic_1} for {metric}!\n')
+                elif p_2 <= p_val:
+                    file.write(f'{k2} first-order-stochastically dominates {k1} with U={u_statistic_2} for {metric}!\n')
+                else:
+                    file.write(f'No first-order stochastic dominance between {k1} and {k2} for {metric}.\n')
+
                     
 def perform_post_hoc_comparison_second_order_sd(dataset_name, metric, predictions_dict, output_file):
     '''
@@ -102,17 +108,20 @@ def perform_post_hoc_comparison_second_order_sd(dataset_name, metric, prediction
         
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
-        for k1 in edfs.keys():
-            for k2 in edfs.keys():
-                if k1 == k2: 
+        keys = list(predictions_dict.keys())
+        seen = set()
+        for k1 in predictions_dict.keys():
+            for k2 in predictions_dict.keys():
+                if k1 == k2 or (k1, k2) in seen or (k2, k1) in seen:
                     continue
+                seen.add((k1, k2))
                 points = np.sort(np.union1d(edfs[k1], edfs[k2]))
                 k1_integral_area = np.cumsum([edfs[k1] * (points[i+1] - points[i]) for i in range(len(points) - 1)])
                 k2_integral_area = np.cumsum([edfs[k2] * (points[i+1] - points[i]) for i in range(len(points) - 1)])
                 k1_sosd_k2 = all(map(lambda x, y : x <= y, k1_integral_area, k2_integral_area))
                 if k1_sosd_k2:
-                    file.write(f'{k1} second-order-stochastically dominates {k2} for {metric}!')
-                    
+                    file.write(f'{k1} second-order-stochastically dominates {k2} for {metric}!\n ')
+                
     
 def compute_edf(data):
     
@@ -127,8 +136,11 @@ def perform_statistical_tests(dataset_name, predictions_dict, experiment_path, p
     predictions_num_changes = {}   
     for key in predictions_dict.keys():
         predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
-    _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
-    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
+    _, predictions_spread = calculate_connectedness(dataset_name, [], predictions_dict, scale_for_img=False)
+    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict, scale_for_img=False)
+    
+    print('Spread', predictions_spread)
+    print('Sizes', predictions_sizes)
     
     perform_kruskal_wallis_and_fosd_per_metric(dataset_name, predictions_num_changes, predictions_spread, predictions_sizes, experiment_path, p_val)
     
@@ -141,16 +153,16 @@ def perform_statistical_tests(dataset_name, predictions_dict, experiment_path, p
     
 def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, save_path):
     gt_num_changes = calculate_num_objects(dataset_name, ground_truth)
-    gt_spread , _ = calculate_distances(dataset_name, ground_truth, {})
-    gt_sizes , _ = calculate_sizes(dataset_name, ground_truth, {})
+    gt_spread , _ = calculate_connectedness(dataset_name, ground_truth, {}, scale_for_img=False)
+    gt_sizes , _ = calculate_sizes(dataset_name, ground_truth, {}, scale_for_img=False)
     
     predictions_num_changes = {}   
     for key in predictions_dict.keys():
         predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
     
-    _, predictions_spread = calculate_distances(dataset_name, [], predictions_dict)
+    _, predictions_spread = calculate_connectedness(dataset_name, [], predictions_dict, scale_for_img=False)
 
-    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict)
+    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict, scale_for_img=False)
     
     os.makedirs(os.path.join(save_path, 'kdes'), exist_ok=True)
     os.makedirs(os.path.join(save_path, 'histograms'), exist_ok=True)
