@@ -6,16 +6,17 @@ from sklearn.cluster import KMeans
 
 
 
-def calculate_distances(dataset_name, ground_truth, predictions):
+def calculate_distances(dataset_name, ground_truth, predictions, scale_for_img=True):
     ground_truth_distances = []
     predictions_distances = {}
     kernel = np.ones((3, 3), np.uint8)
     
-    if len(ground_truth) > 0:
+    if len(ground_truth) > 0 and scale_for_img:
         width, height = ground_truth[0].shape
         img_area = width * height
-    elif len(predictions) > 0: 
-        width, height = predictions[0].shape
+    elif len(predictions.keys()) > 0 and scale_for_img: 
+        first_pred = predictions['Early'][0]
+        width, height = np.array(first_pred).shape
         img_area = width * height
     else:
         img_area = 1
@@ -121,7 +122,7 @@ def calculate_distance_two_points(x1, y1, x2, y2, area):
 
 
 
-def calculate_connectedness(dataset_name, ground_truth, predictions):
+def calculate_connectedness(dataset_name, ground_truth, predictions, scale_for_img=True):
     '''
     =========================
     Using the centroids of each contour, we apply an urban network analysis formula. 
@@ -228,7 +229,7 @@ def calculate_connectedness(dataset_name, ground_truth, predictions):
             else:
                 predictions_connectedness[k].append(0)
         
-
+    print('Connectedness', predictions_connectedness)
     
     return ground_truth_connectedness, predictions_connectedness
     
