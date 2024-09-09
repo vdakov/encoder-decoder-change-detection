@@ -88,17 +88,6 @@ class LEVIR_Dataset(Dataset):
         return self.n_patches
 
     def __getitem__(self, idx):
-        # im_name = list(self.imgs_1.keys())[idx]
-        # I1 = self.imgs_1[im_name]
-        # I2 = self.imgs_2[im_name]
-        # label = self.change_maps[im_name]
-        # num_changes = self.num_changes[im_name]
-  
-        
-        # sample = {'I1': I1, 'I2': I2, 'label': label, "num_changes" : num_changes}
-        
-
-        # return sample
         current_patch_coords = self.patch_coords[idx]
         im_name = current_patch_coords[0]
         limits = current_patch_coords[1]

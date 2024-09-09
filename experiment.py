@@ -104,7 +104,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
 
         if os.path.exists(f'{model_path}.pth') and restore_prev == True:
             print('Restored weights!')
-            state_dict = torch.load(f'{model_path}.pth')
+            state_dict = torch.load(f'{model_path}.pth', weights_only=True)
             net.load_state_dict(state_dict)
             
             training_metrics, validation_metrics, test_metrics = load_metrics(model_path)
@@ -131,8 +131,8 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     plot_loss(experiment_name, fusions, colors)
     store_mean_difference_per_epoch(aggregate_categorical, experiment_path)
-    ground_truth = get_ground_truth(test_dataset)
     perform_statistical_tests(dataset_name, predictions_dict, experiment_path, p_val=0.05)
+    ground_truth = get_ground_truth(test_dataset)
     aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, experiment_path)
     
     

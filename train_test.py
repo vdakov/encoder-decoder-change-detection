@@ -76,13 +76,13 @@ def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, 
         else: 
             torch.save(net.state_dict(), save_dir)
             
-        metrics_save_path = os.path.join(save_dir, 'metrics.json')
-        all_metrics = {
-            'train_metrics': train_metrics,
-            'val_metrics': val_metrics
-        }
-        with open(metrics_save_path, 'w') as f:
-            json.dump(all_metrics, f, indent=4)
+        # metrics_save_path = os.path.join(save_dir, 'metrics.json')
+        # all_metrics = {
+        #     'train_metrics': train_metrics,
+        #     'val_metrics': val_metrics
+        # }
+        # with open(metrics_save_path, 'w') as f:
+        #     json.dump(all_metrics, f, indent=4)
 
 
     return train_metrics, val_metrics

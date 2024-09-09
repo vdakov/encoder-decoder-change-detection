@@ -59,7 +59,7 @@ def compare_distributions(dataset_name, ground_truth, predictions, colors, save_
     plt.savefig(save_path)
     plt.show()
     
-def compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros = True):
+def compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros = False):
     plt.figure(figsize=(15, 6))
     
     if filter_zeros:
@@ -96,17 +96,43 @@ def compare_distributions_kde(dataset_name, ground_truth, predictions, colors, s
     plt.show()
     
     
-def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros=True):
-    plt.figure(figsize=(15, 6))
+def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros=False):
+
     
     if filter_zeros:
         ground_truth_data = filter_zero_bins(ground_truth)
     else:
         ground_truth_data = ground_truth
 
+   
+
+    pairwise_path = os.path.join(os.path.dirname(save_path), 'pairwise')
+    os.makedirs(pairwise_path, exist_ok=True)
+    seen = set()
+    for k1 in predictions.keys():
+        for k2 in predictions.keys():
+            if (k1, k2) in seen or k1 == k2: 
+                continue
+            seen.add((k1, k2))
+
+            sorted_pred_k1 = np.sort(predictions[k1])
+            sorted_pred_k2 = np.sort(predictions[k2])
+            cdf_pred_k1 = np.arange(1, len(sorted_pred_k1) + 1) / len(sorted_pred_k1)
+            cdf_pred_k2 = np.arange(1, len(sorted_pred_k2) + 1) / len(sorted_pred_k2)
+            
+            plt.figure(figsize=(15, 6))
+            plt.plot(sorted_pred_k1, cdf_pred_k1, color=colors[k1], label=f'{k1}, $\mu$={np.mean(predictions[k1]):.2f}, $\sigma^2$={np.var(predictions[k1]):.2f}', alpha=0.5)
+            plt.plot(sorted_pred_k2, cdf_pred_k2, color=colors[k2], label=f'{k2}, $\mu$={np.mean(predictions[k2]):.2f}, $\sigma^2$={np.var(predictions[k1]):.2f}', alpha=0.5)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., fontsize='small')
+            plt.tight_layout()
+            plt.savefig(os.path.join(pairwise_path, f'{k1}-{k2}_{x_label}_cdf.png'))
+            plt.show()
+
+    plt.figure(figsize=(15, 6))
     sorted_gt = np.sort(ground_truth_data)
     cdf_gt = np.arange(1, len(sorted_gt) + 1) / len(sorted_gt)
     plt.plot(sorted_gt, cdf_gt, color='black', label=f'Ground Truth, $\mu$={np.mean(ground_truth_data):.2f}, $\sigma^2$={np.var(ground_truth_data):.2f}', alpha=0.5)
+
 
     for k in predictions.keys():
         if filter_zeros:
@@ -120,7 +146,6 @@ def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, s
 
     plt.title(dataset_name)
     plt.xlabel(x_label)
-    
     plt.ylabel(y_label)
     
     xmin = 0

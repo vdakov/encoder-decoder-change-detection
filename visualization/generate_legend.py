@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt 
-from matplotlib.pyplot import rcParams
+from matplotlib.pyplot import font_manager, rcParams
 import numpy as np
 
 
@@ -9,8 +9,14 @@ import numpy as np
 # and a shared legend with a consistent color scheme. 
 # ===============================================================
 
-
-rcParams["font.family"] = "Times New Roman"
+font_path = 'Times New Roman.ttf'
+try:
+    prop = font_manager.FontProperties(fname=font_path)
+    font_manager.fontManager.addfont(font_path)
+    rcParams['font.family'] = prop.get_name()
+except Exception as e:
+    print(f"Warning: Could not load custom font. Using default font. Error: {e}")
+    
 n = 4
 
 # Create a list of n distinct colors

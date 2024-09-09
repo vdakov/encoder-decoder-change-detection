@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import numpy as np
-from matplotlib import rcParams
+from matplotlib import font_manager, rcParams
 
 from hypothesis_histograms import calculate_bins
 
@@ -11,10 +11,13 @@ from hypothesis_histograms import calculate_bins
 # have the same font and color scheme. Feel free to extend it. 
 # ===========================
 
-
-rcParams['font.family'] = 'serif'
-rcParams["font.family"] = "Times New Roman"
-
+font_path = 'Times New Roman.ttf'
+try:
+    prop = font_manager.FontProperties(fname=font_path)
+    font_manager.fontManager.addfont(font_path)
+    rcParams['font.family'] = prop.get_name()
+except Exception as e:
+    print(f"Warning: Could not load custom font. Using default font. Error: {e}")
 
 
 
