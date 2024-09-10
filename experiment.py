@@ -22,7 +22,7 @@ from cscd_dataset_loader import CSCD_Dataset
 from data_examination import examine_subset
 from levir_dataset_loader import LEVIR_Dataset
 from metrics import evaluate_net_predictions, get_ground_truth, get_predictions
-from plots import create_loss_accuracy_figures
+from plots import create_loss_accuracy_figures, plot_aggregated_loss
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
 from tables import create_tables, load_metrics, store_mean_difference_per_epoch
@@ -30,7 +30,6 @@ from train_test import train
 from unet import Unet 
 from late_siam_net import SiamLateFusion
 import argparse
-from aggregate_training_results import plot_loss
 from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
 
 
@@ -72,7 +71,32 @@ def get_args():
 
     return parser.parse_args()
 
-FUSIONS = ["Early", "Middle-Conc", "Middle-Diff", "Late"] # Constant hardcoded names of the four fusion architectures tested 
+
+FUSIONS = ["Early", "Middle-Conc", "Middle-Diff", "Late"]  # Constant hardcoded names of the four fusion architectures tested 
+
+def initialize_model(fusion, experiment_name):
+    """
+    Initialize the model based on the fusion type.
+    """
+    if fusion == "Early":
+        net = Unet(6, 2)
+        net_name = f'Early-{experiment_name}'
+    elif fusion == "Middle-Conc":
+        net = SiamUnet_conc(3, 2)
+        net_name = f'Middle-Conc-{experiment_name}'
+    elif fusion == "Middle-Diff":
+        net = SiamUnet_diff(3, 2)
+        net_name = f'Middle-Diff-{experiment_name}'
+    elif fusion == "Late":
+        net = SiamLateFusion(3, 2)
+        net_name = f'Late-{experiment_name}'
+    else:
+        raise ValueError(f"Unknown fusion type: {fusion}")
+
+    return net, net_name
+
+
+
 
 
 def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, criterion, epochs, restore_prev=False, generate_plots=False):
@@ -120,14 +144,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     for fusion in FUSIONS:
         print('Training ', fusion, ':')
-        if fusion == "Early":
-            net, net_name = Unet(6, 2), f'Early-{experiment_name}'
-        elif fusion == "Middle-Conc": 
-            net, net_name = SiamUnet_conc(3, 2), f'Middle-Conc-{experiment_name}'
-        elif fusion == "Middle-Diff":
-            net, net_name = SiamUnet_diff(3, 2), f'Middle-Diff-{experiment_name}'
-        elif fusion == "Late": 
-            net, net_name = SiamLateFusion(3, 2), f'Late-{experiment_name}'
+        net, net_name = initialize_model(fusion, experiment_name)
 
         net.to(DEVICE)
 
@@ -143,7 +160,7 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
 
         else: 
             os.makedirs(model_path, exist_ok=True)
-            training_metrics, validation_metrics = train(net, train_set, train_set_loader, val_set, val_set_loader, criterion, DEVICE, n_epochs= epochs, save=True, save_dir = f'{model_path}.pth', skip_val = False, early_stopping = True)
+            training_metrics, validation_metrics = train(net, train_set_loader, val_set_loader, criterion, DEVICE, n_epochs= epochs, save=True, save_dir = f'{model_path}.pth', skip_val = False, early_stopping = True)
             
 
         
@@ -159,13 +176,19 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
           
         
     if generate_plots:
-        plot_loss(experiment_name, FUSIONS, COLORS)
+        plot_aggregated_loss(experiment_name, FUSIONS, COLORS)
         store_mean_difference_per_epoch(aggregate_categorical, EXPERIMENT_PATH)
         perform_statistical_tests(dataset_name, predictions_dict, EXPERIMENT_PATH, p_val=0.05)
         ground_truth = get_ground_truth(test_set)
         aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, COLORS, EXPERIMENT_PATH)
-    
-    
+        
+        
+        
+DATASETS = {
+    'LEVIR': LEVIR_Dataset,
+    'CSCD': CSCD_Dataset
+}
+
 def get_dataset(dataset_name, dirname, mode, FP_MODIFIER, PATCH_SIDE=96, transform=None):
     '''Dataset getter function to give out a specified PyTorch dataset. Made like this for 
     extension purposes.
@@ -173,12 +196,10 @@ def get_dataset(dataset_name, dirname, mode, FP_MODIFIER, PATCH_SIDE=96, transfo
     There exist some depricated datasets part of this getter function, appropriately
     found in the 'deprecated' directory of the project. 
     '''
-    if dataset_name == 'LEVIR':
-        return LEVIR_Dataset(dirname, mode, FP_MODIFIER, patch_side=PATCH_SIDE, transform=transform)
-    elif dataset_name == 'CSCD':
-        return CSCD_Dataset(dirname, mode, FP_MODIFIER, patch_side=PATCH_SIDE, transform=transform)
-    else:
-        raise ValueError("Unknown dataset name")
+    if dataset_name not in DATASETS:
+        raise ValueError(f"Unknown dataset name {dataset_name}")
+    return DATASETS[dataset_name](dirname, mode, FP_MODIFIER, patch_side=PATCH_SIDE, transform=transform)
+
     
 def get_loss(name, weights):
     '''Dataset getter function to give out a specified PyTorch loss. Made like this for 

@@ -1,3 +1,4 @@
+import csv
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
@@ -6,10 +7,6 @@ from matplotlib import font_manager, rcParams
 
 from hypothesis_histograms import calculate_bins
 
-# ===========================
-# Functions used for various plots and figures throughout the experiment. All of them are set to 
-# have the same font and color scheme. Feel free to extend it. 
-# ===========================
 
 font_path = 'Times New Roman.ttf'
 try:
@@ -22,7 +19,10 @@ except Exception as e:
 
 
 def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model_name, save_path = None):
-    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    '''The function that creates the big figure with the Loss, Accuracy and Precision-Recall Plots. It 
+    evaluates all of them for their training, validation and test results at the end.
+    '''
+    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
     
 
     train_loss = extract_metric(train_metrics, 'net_loss')
@@ -81,139 +81,65 @@ def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model
 
 
 def extract_metric(metric_list, key):
+    '''Just a helper for extracting only a given metric because the other syntax was annoying me.'''
     return [item[key] for item in metric_list]
 
 
-def aggregate_category_histograms(dataset_name, plot_name, aggregate_category_metrics, save_path=None):
-  
-    all_values = [value for d in aggregate_category_metrics for value in list(d.values())[:-1]]
-    y_limit = np.max(all_values)
-    
-    num_categories = len(aggregate_category_metrics[0].keys()) - 1
-    num_cols = int(np.ceil(num_categories / 2))
-    num_rows = 2
-
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(15, 5 * num_rows))
-    
-    metrics = ['TP', 'FP', 'TN', 'FN']
-    
+def load_loss_data(file_path):
+    """Helper function to load loss data from a CSV file."""
     results = []
-    colors = {"Early": 'blue', "Mid-Conc." :'orange', "Mid-Diff." : 'lime', "Late" :'red'}
+    try:
+        with open(file_path, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                results.append(float(row['net_loss']))
+    except FileNotFoundError:
+        print(f"Warning: File {file_path} not found.")
+    except KeyError:
+        print(f"Warning: 'net_loss' column not found in {file_path}.")
+    return results
+
+def plot_aggregated_loss(experiment_name, fusions, colors):
+    '''
+    Produces an aggregated loss plot from existing CSV files. The idea is to see 
+    how all of the test architectures converge. 
+    '''
+    path = os.path.join('experiment_results', experiment_name)
+    plt.figure(figsize=(15, 5))
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+
+    max_loss_value = 0
     
-    if dataset_name == "CSCD":
-        titles = {"large_change_uniform": 'LCU', "large_change_non_uniform" :'LCNU', "small_change_non_uniform" : 'SCNU', "small_change_uniform" :'SCU'}
-    elif dataset_name == "HRSCD":
-        titles = {"No information" : "No information" , "Artificial surfaces" : "Artificial surfaces",
-                  "Agricultural areas": "Agricultural areas", "Forests" : "Forests", "Wetlands" : "Wetlands", "Water": "Water"}
-    elif dataset_name == "HIUCD":
-        titles = {
-            "Unlabeled": "Unlabeled",
-            "Water": "Water",
-            "Grass": "Grass",
-            "Building": "Building",
-            "Green house": "Green house",
-            "Road": "Road",
-            "Bridge": "Bridge",
-            "Others": "Others",
-            "Bare land": "Bare land",
-            "Woodland": "Woodland"
-        }
-    
-    for i, c in enumerate(list(aggregate_category_metrics[0].keys())[:-1]):
+    for f in fusions:
+        dir = f + "-" + experiment_name 
+        train_file_path = os.path.join(path, dir, 'tables', 'train_metrics.csv')
+        val_file_path = os.path.join(path, dir, 'tables', 'val_metrics.csv')
         
-        row, col = divmod(i, num_cols)
-        ax = axes[row, col]
-        x = np.arange(len(metrics))  # the label locations
- 
-        width = 0.24
-        multiplier = 0
-
-        for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
-            
-            tp = category_metrics[c][0]
-            fp = category_metrics[c][1]
-            tn = category_metrics[c][2]
-            fn = category_metrics[c][3]
-            
-            precision = tp / (tp + fp) if (tp + fp) != 0 else 0
-            recall = tp / (tp + fn) if (tp + fn) != 0 else 0
-            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) != 0 else 0
-            
-            
-            offset = width * multiplier
-            rects = ax.bar(x + offset, category_metrics[c], width, color=colors[model_name])
-            multiplier += 1
-
-            
-            ax.set_ylim(0, int(1.1 * y_limit))
-            ax.set_title(titles[c])
-            ax.set_xticks(x + width, metrics)
-
-            
-            results.append({
-                'model_name': model_name,
-                'category': c,
-                'precision': precision,
-                'recall': recall,
-                'f1_score': f1
-            })
-            
-    for i in range(num_categories, num_rows * num_cols):
-        fig.delaxes(axes.flat[i]) 
-                
-
+        training_results = load_loss_data(train_file_path)
+        validation_results = load_loss_data(val_file_path)
+        
+        if training_results:
+            max_loss_value = max(max_loss_value, max(training_results))
+            plt.plot(np.arange(len(training_results)), training_results, label=f, color=colors[f], linestyle='-')
+        
+        # Plot validation results
+        if validation_results:
+            max_loss_value = max(max_loss_value, max(validation_results))
+            plt.plot(np.arange(len(validation_results)), validation_results, label=f'{f}-Val.', color=colors[f], linestyle='dashed')
+    
+    if max_loss_value > 0:
+        plt.ylim([0, max_loss_value])
+        
     plt.tight_layout()
-    plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95)
-
-        
-    if save_path:
-        os.makedirs(os.path.join(save_path), exist_ok=True)
-        plt.savefig(os.path.join(save_path, 'aggregate_categorical.png'))
-        results_df = pd.DataFrame(results)
-        results_df.to_csv(os.path.join(save_path,  'metrics_results.csv'), index=False)
-        
-    
+    plt.legend()
+    # plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
+    plt.savefig(os.path.join(path, 'aggregated_loss.png'))
     plt.show()
     
-    
-def compare_number_of_buildings(dataset_name, plot_name, aggregate_category_metrics, save_path=None):
-    colors = {"Early": 'blue', "Mid-Conc." :'orange', "Mid-Diff." : 'lime', "Late" :'red'}
-    markers = {"Early": 'o', "Mid-Conc.": 's', "Mid-Diff.": '^', "Late": 'D'}
-    gt_label_added = False
-    
-    plt.figure(figsize=(8, 5))
 
-    for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
 
-        values = category_metrics['num_changes']
-        ground_truth = [item[0] for item in values]
-        predictions = [item[1] for item in values]
-        
-        plt.scatter(predictions, ground_truth, c=colors[model_name], label=model_name, alpha=0.4, edgecolors='w', s=100, marker=markers[model_name])
-        
-    for model_name, category_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
-        values = category_metrics['num_changes']
-        ground_truth = [item[0] for item in values]
-        
-        if not gt_label_added:
-            plt.scatter(ground_truth, ground_truth, c='black', label='GT', edgecolors='w', s=100, marker='x')
-            gt_label_added = True
-        else:
-            plt.scatter(ground_truth, ground_truth, c='black', edgecolors='w', s=100, marker='x')
-        
-        
-        
-    plt.xlabel('# Predicted Changes')
-    plt.ylabel('# Actual Changes')
-    plt.tight_layout()
-    plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
 
-    if save_path:
-        os.makedirs(os.path.join(save_path), exist_ok=True)
-        plt.savefig(os.path.join(save_path, 'num_buildings.png'))
-
-    
-    plt.show()
     
 
 
@@ -226,6 +152,44 @@ def plot_comparison_histogram(dataset_name, gt, predictions, save_path):
     
     
 
+    
+def plot_aggregated_loss(experiment_name, fusions, colors):
+    '''
+    Produces an aggregated loss plot from existing CSV files. 
+    '''
+    path = os.path.join('experiment_results', experiment_name)
+    plt.figure(figsize=(15, 5))
+    
+
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+
+
+    for f in fusions:
+        dir = f + "-" + experiment_name 
+        
+        with open(os.path.join(path, dir, 'tables', 'train_metrics.csv'), newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            training_results = []
+            for row in reader:
+                training_results.append(float(row['net_loss']))
+                
+            plt.ylim([0, max(training_results) if len(training_results) > 0 else 0])
+            plt.plot(np.arange(len(training_results)), training_results, label=f, color=colors[f], linestyle='-')
+        
+        with open(os.path.join(path, dir, 'tables', 'val_metrics.csv'), newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            validation_results = []
+            for row in reader:
+                validation_results.append(float(row['net_loss']))
+            plt.ylim([0, max(validation_results) if len(validation_results) > 0 else 0])
+            plt.plot(np.arange(len(validation_results)), validation_results, label=f'{f}-Val.', color=colors[f], linestyle='dashed')
+    
+    plt.tight_layout()
+    plt.legend()
+    # plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, top=0.95)
+    plt.savefig(os.path.join(path, 'aggregated_loss.png'))
+    plt.show()
     
 
     

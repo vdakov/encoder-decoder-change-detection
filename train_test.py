@@ -4,38 +4,42 @@ from torch.autograd import Variable
 from metrics import evaluate_net_predictions
 from tqdm import tqdm as tqdm
 import time
-import numpy as np
-import json
-import os
 
-def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, device, n_epochs = 10, save = True, save_dir=f'{time.time()}.pth.tar', skip_val = True, early_stopping = True):
+def train(net, train_loader, val_loader, criterion, device, n_epochs = 10, save = True, save_dir=f'{time.time()}.pth.tar', skip_val = True, early_stopping = True):
     '''
     The current training and validation loop used for the experiment. Here all major hyperparameters and machine learning 
     methods have been employed. They include: 
         - Adam Optimizer
         - Exponential Learning Rate Scheduler 
         - Early Stopping 
+        - Validation Sets (and an optional stopping of it desired for testing/computation purposes)
+        
+    The parameters for Adam and the exponential scheduler are hardcoded and borrowed from https://ieeexplore.ieee.org/abstract/document/8451652.
+    
+    The patience paramter is hardcoded to 10 epochs. When patience is restored it is not put to 10, but to 5 (unless already bigger).
+    
+    Training is performed in batches using PyTorch's dataloaders. 
     '''
     optimizer = torch.optim.Adam(net.parameters(), weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
+    
     train_metrics = []
     val_metrics = []
     
     patience = 10
     best_loss = float('inf')
-    best_model_weights = None
+    best_model_weights = copy.deepcopy(net.state_dict())
     
-
     for epoch in range(n_epochs):
         net.train()
-
+        running_loss = 0.0
+        
         with tqdm(total=len(train_loader), desc=f'Epoch {epoch+1}/{n_epochs}', unit='batch') as pbar:
             for batch in train_loader:
                 I1 = Variable(batch['I1'].float().to(device))
                 I2 = Variable(batch['I2'].float().to(device))
                 label = Variable(batch['label'].long().to(device))
         
- 
                 optimizer.zero_grad()
 
                 output = net(I1, I2).to(device)
@@ -44,45 +48,35 @@ def train(net, train_dataset, train_loader, val_dataset, val_loader, criterion, 
                 loss.backward()
                 optimizer.step()
 
-                
+                running_loss += loss.item()
                 pbar.set_postfix(loss=loss.item())
                 pbar.update(1)
 
         scheduler.step()
 
-
-        train_metrics.append(evaluate_net_predictions(net, criterion, train_loader))
+        train_loss = running_loss / len(train_loader)
+        train_metrics.append(train_loss)
         if not skip_val:
             curr_val_metrics = evaluate_net_predictions(net, criterion, val_loader)
             val_metrics.append(curr_val_metrics)
 
             val_loss = curr_val_metrics['net_loss']
             
-            if early_stopping and val_loss < best_loss:
+            if val_loss < best_loss:
                 best_loss = val_loss
                 best_model_weights = copy.deepcopy(net.state_dict())  
-                patience = 5  
+                if early_stopping:
+                    patience = max(5, patience)
             else:
-                if epoch > 10:
+                if early_stopping and epoch > 10:
                     patience -= 1
                 if patience == 0:
                     break
-            
-
-
     if save:
         if early_stopping:
             torch.save(best_model_weights, save_dir)
         else: 
             torch.save(net.state_dict(), save_dir)
-            
-        # metrics_save_path = os.path.join(save_dir, 'metrics.json')
-        # all_metrics = {
-        #     'train_metrics': train_metrics,
-        #     'val_metrics': val_metrics
-        # }
-        # with open(metrics_save_path, 'w') as f:
-        #     json.dump(all_metrics, f, indent=4)
 
 
     return train_metrics, val_metrics
