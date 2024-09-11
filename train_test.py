@@ -32,7 +32,6 @@ def train(net, train_loader, val_loader, criterion, device, n_epochs = 10, save 
     
     for epoch in range(n_epochs):
         net.train()
-        running_loss = 0.0
         
         with tqdm(total=len(train_loader), desc=f'Epoch {epoch+1}/{n_epochs}', unit='batch') as pbar:
             for batch in train_loader:
@@ -48,14 +47,13 @@ def train(net, train_loader, val_loader, criterion, device, n_epochs = 10, save 
                 loss.backward()
                 optimizer.step()
 
-                running_loss += loss.item()
                 pbar.set_postfix(loss=loss.item())
                 pbar.update(1)
 
         scheduler.step()
 
-        train_loss = running_loss / len(train_loader)
-        train_metrics.append(train_loss)
+
+        train_metrics.append(evaluate_net_predictions(net, criterion, val_loader))
         if not skip_val:
             curr_val_metrics = evaluate_net_predictions(net, criterion, val_loader)
             val_metrics.append(curr_val_metrics)

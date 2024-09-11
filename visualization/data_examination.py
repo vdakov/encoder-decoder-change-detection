@@ -1,23 +1,23 @@
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from torch.utils.data import DataLoader, SubsetRandomSampler
 import os
-import torch
 from torch.autograd import Variable
 import numpy as np
 
 
 def examine_subset(net, model_name, num_samples, device, data_loader, save_path=None):
+    '''Function to visualize per image the performance of a network on (typically) the test set.
+    It portrays it in a N x 4 grid with the Time 1, Time 2, Ground Truth and Predicted images. The method has to forward 
+    pass all of the specified samples through the trained-up-to-that-point network and transform them to numpy (accordingly convert them from BGR 
+    to RGB and display them.)'''
 
     p, q = num_samples // 4, 4
 
     fig = plt.figure(figsize=(10, q * 2))
     outer = gridspec.GridSpec(num_samples // 4, 4)
     fig.suptitle(model_name, fontsize=16)
-
-    batch_size = 1
-
-    k = 0
+    
+    
     for i in range(p):
         for j in range(q):
             batch = next(iter(data_loader))
@@ -31,7 +31,7 @@ def examine_subset(net, model_name, num_samples, device, data_loader, save_path=
 
             output = net(I1, I2)
 
-            img1 = np.transpose(np.squeeze(img1.cpu().numpy()), (1, 2, 0))
+            img1 = np.transpose(np.squeeze(img1.cpu().numpy()), (1, 2, 0)) #BGR-RGB conversion
             img2 = np.transpose(np.squeeze(img2.cpu().numpy()), (1, 2, 0))
             label = np.squeeze(label.cpu().numpy())
             output = np.exp(np.squeeze(output.cpu().detach().numpy())[1])

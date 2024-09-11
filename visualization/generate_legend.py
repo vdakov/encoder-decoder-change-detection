@@ -3,11 +3,12 @@ from matplotlib.pyplot import font_manager, rcParams
 import numpy as np
 
 
-# ===============================================================
-# Script meant to create a legend figure for the original paper. To reduce the visual clutter in the 
-# original bachelor thesis paper (see the README), I made one large figure for all fusion architectures
-# and a shared legend with a consistent color scheme. 
-# ===============================================================
+'''
+Script meant to create a legend figure for the original paper. To reduce the visual clutter in the 
+original bachelor thesis paper (see the README), I made one large figure for all fusion architectures
+and a shared legend with a consistent color scheme. 
+'''
+
 
 font_path = 'Times New Roman.ttf'
 try:
@@ -48,21 +49,13 @@ custom_lines = [
 ]
 
 fig, ax = plt.subplots()
-# plt.title('Legend', weight='bold')
 ax.axis('off')  # Hide the axis
 
-# Add the legend
 # Add the legend
 legend = ax.legend(custom_lines, 
                    list(colors.keys())[:4] + ['Ground Truth'] + list(colors.keys())[4:] ,
                    loc='center', 
                    ncol=2)
-
-# legend = ax.legend(custom_lines, 
-#                    list(colors.keys())[:4] + ['Ground Truth'] ,
-#                    loc='center', 
-#                    ncol=1)
-
 
 # Adjust the figure size to fit the legend
 fig.canvas.draw()

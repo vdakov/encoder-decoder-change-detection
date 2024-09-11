@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 
 from distance import calculate_connectedness, calculate_distances
-from hypothesis_histograms import compare_distributions_num_changes, compare_distributions_sizes, compare_distributions_spread
+from statistical_figures import compare_distributions_num_changes, compare_distributions_sizes, compare_distributions_spread
 from num_objects import calculate_num_objects
 from plots import plot_comparison_histogram
 from sizes import calculate_sizes

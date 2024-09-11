@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from matplotlib import font_manager, rcParams
 
-from hypothesis_histograms import calculate_bins
+from statistical_figures import calculate_bins
 
 
 font_path = 'Times New Roman.ttf'
@@ -22,8 +22,9 @@ def create_loss_accuracy_figures(train_metrics, val_metrics, test_metrics, model
     '''The function that creates the big figure with the Loss, Accuracy and Precision-Recall Plots. It 
     evaluates all of them for their training, validation and test results at the end.
     '''
-    fig, axs = plt.subplots(1, 3, figsize=(17, 5))
+    _, axs = plt.subplots(1, 3, figsize=(17, 5))
     
+    print(train_metrics, val_metrics, test_metrics)
 
     train_loss = extract_metric(train_metrics, 'net_loss')
     val_loss = extract_metric(val_metrics, 'net_loss')

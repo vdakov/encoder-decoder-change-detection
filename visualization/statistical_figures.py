@@ -3,24 +3,43 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
+'''
+The final evaluation is based on a bunch of hypothesis tests, more specifically non-parametric ones about stochastic dominance. 
+Here I have functionality about plotting probability function, either histograms approximation of the PDFs, KDE approximation or 
+cumilative (empirical) density functions. Along with all of that there are some utility functions within them.
+
+All of the distributions are subsequently output into their own folders. 
+There are both pairwise comparisons and aggrgated one within all other ones. 
+
+'''
+
+
 def calculate_bins(data):
-    # Calculate the optimal number of bins using the Freedman-Diaconis rule
+    '''Calculate the optimal number of bins for the provided data array
+    using the Freedman-Diaconis rule'''
+    
     data = np.array(data)
 
     q25, q75 = np.percentile(data, [25, 75])
     bin_width = 2 * (q75 - q25) * (len(data) ** (-1/3))
     
-   
     bins = int((data.max() - data.min()) / bin_width)
     return bins if bins > 0 else 10
 
 def filter_zero_bins(values):
+    '''
+    Method that filters out all zero-values in the provided data array. 
+    As the patches-cutting method produced lots of negative samples, this was useful for visual comparison purposes in some experiments.
+    '''
     values = np.array(values)
     non_zero_indices = values > 0
     return values[non_zero_indices]
 
 def compare_distributions(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros = False):
-    bins = calculate_bins(ground_truth)
+    '''Histogram comparison based on histograms. The function gets all of the data (fusions' predictions, ground truth) and outputs them 
+    as a histogram with an optimal number of bins based on a pre-defined rule. It gives the KDEs of all of them as orientation as well.
+    The reasoons Seaborn instead of pyplot is purely because of convenience. 
+    '''
     plt.figure(figsize=(15, 6))
     
     if filter_zeros:
@@ -60,6 +79,9 @@ def compare_distributions(dataset_name, ground_truth, predictions, colors, save_
     plt.show()
     
 def compare_distributions_kde(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros = False):
+    ''' Function that displays kernel density estimates (via Parzen) of all of the data we have. Initially the distribution comparison started as so, but 
+    It is functionally the same as the histogram one functionally otherwise. 
+    '''
     plt.figure(figsize=(15, 6))
     
     if filter_zeros:
@@ -97,14 +119,14 @@ def compare_distributions_kde(dataset_name, ground_truth, predictions, colors, s
     
     
 def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, save_path, x_label, y_label, filter_zeros=False):
-
-    
+    ''' A function that outputs a visualization of all of the empirative distribution functions (approximation of the CDFs) for our datasets. 
+    It does so both pair-wise and aggregated for all. Visualizations are in the appropriate folder. The plotting is done via sorting the points against 
+    probabilites, a standard EDF method.
+    '''
     if filter_zeros:
         ground_truth_data = filter_zero_bins(ground_truth)
     else:
         ground_truth_data = ground_truth
-
-   
 
     pairwise_path = os.path.join(os.path.dirname(save_path), 'pairwise')
     os.makedirs(pairwise_path, exist_ok=True)
@@ -156,6 +178,15 @@ def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, s
     plt.tight_layout()
     plt.savefig(save_path.split(".")[0] + "_cdf.png")
     plt.show()
+    
+'''
+--------------------------------------
+COMMENT FOR ALL THREE FUNCTIONS BELOW:
+--------------------------------------
+They realize all the visualizations for all of our three metrics. It is where all arguments, such as filtering out 
+zero-bins or plot names and axises are changed. Those are the methods in the perfomances of statistical visualizations 
+in 'experiment.py' 
+'''
     
 def compare_distributions_num_changes(dataset_name, ground_truth, predictions, colors, save_path, img_name):
     save_path_kde = os.path.join(save_path, 'kdes', img_name)
