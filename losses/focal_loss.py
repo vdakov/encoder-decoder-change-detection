@@ -4,9 +4,13 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-# Credit: https://github.com/clcarwin/focal_loss_pytorch
-
 class FocalLoss(nn.Module):
+    '''
+    An implementation of the focal loss function from the original RetinaNet paper (https://arxiv.org/abs/1708.02002v2). 
+    It is used to punish easy examples, and focus on the hard examples, and is tried out in this experiment. 
+    
+    Borrowed from https://github.com/clcarwin/focal_loss_pytorch, and adjusted for the current neural network layer structure. 
+    '''
     def __init__(self, gamma=0, alpha=None, size_average=True):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
@@ -22,8 +26,7 @@ class FocalLoss(nn.Module):
             input = input.contiguous().view(-1,input.size(2))   # N,H*W,C => N*H*W,C
         target = target.view(-1,1)
 
-        logpt = F.log_softmax(input, dim=1)
-        logpt = logpt.gather(1,target)
+        logpt = input.gather(1,target)
         logpt = logpt.view(-1)
         pt = Variable(logpt.data.exp())
 

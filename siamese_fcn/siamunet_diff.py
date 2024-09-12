@@ -1,14 +1,17 @@
-# Rodrigo Caye Daudt
-# https://rcdaudt.github.io/
-# Daudt, R. C., Le Saux, B., & Boulch, A. "Fully convolutional siamese networks for change detection". In 2018 25th IEEE International Conference on Image Processing (ICIP) (pp. 4063-4067). IEEE.
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.padding import ReplicationPad2d
 
+'''
+The implementation of the SiamUnet_Diff segmentation network, also referred to as Middle-Diff or FC-Siam-Diff in the paper/s. 
+All creadit to Rodrigo Caye Daudt,  https://rcdaudt.github.io/, Daudt, R. C., Le Saux, B., & Boulch, A. 
+"Fully convolutional siamese networks for change detection". In 2018 25th IEEE International Conference on Image Processing (ICIP) (pp. 4063-4067). IEEE.
+'''
+
 class SiamUnet_diff(nn.Module):
-    """SiamUnet_diff segmentation network."""
+
 
     def __init__(self, input_nbr, label_nbr):
         super(SiamUnet_diff, self).__init__()

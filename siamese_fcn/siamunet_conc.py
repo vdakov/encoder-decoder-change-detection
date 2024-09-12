@@ -1,14 +1,17 @@
-# Rodrigo Caye Daudt
-# https://rcdaudt.github.io/
-# Daudt, R. C., Le Saux, B., & Boulch, A. "Fully convolutional siamese networks for change detection". In 2018 25th IEEE International Conference on Image Processing (ICIP) (pp. 4063-4067). IEEE.
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.padding import ReplicationPad2d
 
+
+'''
+The implementation of the SiamUnet_conc segmentation network, also referred to as Middle-Conc or FC-Siam-Conc in the paper/s. 
+All creadit to Rodrigo Caye Daudt,  https://rcdaudt.github.io/, Daudt, R. C., Le Saux, B., & Boulch, A. 
+"Fully convolutional siamese networks for change detection". In 2018 25th IEEE International Conference on Image Processing (ICIP) (pp. 4063-4067). IEEE.
+'''
+
 class SiamUnet_conc(nn.Module):
-    """SiamUnet_conc segmentation network."""
+
 
     def __init__(self, input_nbr, label_nbr):
         super(SiamUnet_conc, self).__init__()

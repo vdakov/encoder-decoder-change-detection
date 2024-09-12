@@ -6,6 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.padding import ReplicationPad2d
 
+'''The implementation of the late fusion arcitecture (also called FC-LF in the paper). It works in a very similar 
+way to the early fusion FC-EF, however first the two images are segmented by a normal U-Net implementation.
+
+Code for U-Net borrowed from https://github.com/rcdaudt/fully_convolutional_change_detection/blob/master/fully-convolutional-change-detection.ipynb.
+Idea for the late fusion is original. 
+'''
+
 
 class UNet(nn.Module):
 

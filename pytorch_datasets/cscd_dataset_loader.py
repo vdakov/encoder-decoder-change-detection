@@ -1,8 +1,4 @@
-from math import ceil
 import sys
-
-
-
 sys.path.insert(1, '../siamese_fcn')
 sys.path.insert(1, '../pytorch_datasets')
 sys.path.insert(1, '../evaluation')
@@ -13,6 +9,7 @@ sys.path.insert(1, '../preprocessing')
 
 from num_objects import get_number_of_objects
 from torch.utils.data import Dataset
+from math import ceil
 import os
 from reshape import reshape_for_torch
 import numpy as np
@@ -25,6 +22,21 @@ import torch
 
 
 class CSCD_Dataset(Dataset):
+    '''The PyTorch dataloader for the CSCD dataset. The initialization parameters are as follows: 
+        - dirname: A string containing where the model should draw data from 
+        - set_name: A string specifying set (train, test, val) this data is from (for a naming convention)
+        - FP_Modifier: False positive modifier number. A parameter that scales how many times xN more the dataset should punish false positive exaples 
+        (done here, as the weights for the two classes are calculated based on the distribution of black and white pixels in the dataset)
+        - patch_side: The size of one side of the patch to cut all input images into, via the patch-based method described in the paper. 
+        - transform: A list of all of the data augmentations (data transformations) performed on the dataset during training. They come in the form of 
+        PyTorch callbacks that are implemented in 'data_augmentation.py' 
+        
+        The CSCD dataset is custom made for this experiment via the script 'dataset_creator.py' , and is mean to create different change detection situations, based on sampling
+        and point distribution algorithms. 
+        
+        The PyTorch dataset creator puts all of these into dictionaries and lists and makes them retrievable via the PyTorch interfaces.
+        The functions are standard PyTorch dataset getters.
+    '''
 
     def __init__(self, dirname, set_name, FP_MODIFIER, patch_side = 96, transform=None):
         self.imgs_1 = {}
@@ -46,19 +58,9 @@ class CSCD_Dataset(Dataset):
         self.n_patches_per_image = {}
         self.n_patches = 0
         self.patch_coords = []
-        
-        situation_dict = {}
-        num_changes_dict = {}
-        
-        with open(os.path.join(dirname, set_name, "situation_labels.csv"), newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                im_name = row['im_name']
-                situation = row['situation']
-                num_changes_dict[im_name] = int(row['num_changes'])
-                situation_dict[im_name] = situation
+ 
 
-        names = set(os.listdir(os.path.join(dirname,set_name, "A"))) & set(os.listdir(os.path.join(dirname,set_name, "B"))) & set(os.listdir(os.path.join(dirname,set_name, "label"))) & situation_dict.keys()
+        names = set(os.listdir(os.path.join(dirname,set_name, "A"))) & set(os.listdir(os.path.join(dirname,set_name, "B"))) & set(os.listdir(os.path.join(dirname,set_name, "label"))) 
 
 
         for name in names:
@@ -68,17 +70,14 @@ class CSCD_Dataset(Dataset):
             b = reshape_for_torch(cv2.imread(os.path.join(dirname, set_name, "B", name)))
             label = cv2.imread(os.path.join(dirname, set_name, "label", name), cv2.IMREAD_GRAYSCALE)
             label = (label - np.min(label)) / (np.ptp(label)) if np.ptp(label) != 0 else np.zeros_like(label)
-            situation = situation_dict[name]
-            n_changes = num_changes_dict[name]
+            n_changes = get_number_of_objects(label.astype(np.uint8))
 
 
             self.imgs_1[img_name] = a
             self.imgs_2[img_name] = b
             self.change_maps[img_name] = label
-            self.situations[img_name] = situation
             self.num_changes[img_name] = n_changes
             
-
 
             s = label.shape
             n_pix += np.prod(s)
@@ -100,26 +99,16 @@ class CSCD_Dataset(Dataset):
                     self.patch_coords.append(current_patch_coords)
 
 
-            # self.items.append((a, b, label, situation, n_changes))
-
 
         self.weights = [  2 * FP_MODIFIER * true_pix / n_pix,  2 * (n_pix - true_pix) / n_pix]
 
     def get_img(self, im_name):
-        return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name], self.situations[im_name], self.num_changes[im_name]
+        return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name], self.num_changes[im_name]
 
     def __len__(self):
         return self.n_patches
 
     def __getitem__(self, idx):
-        # I1, I2, label, situation, num_changes = self.items[idx]
-
-        # label = torch.tensor(label, dtype=torch.float32)
-
-        # sample = {'I1': I1, 'I2': I2, 'label': label, "situation": situation, "num_changes": num_changes}
-
-
-        # return sample
         current_patch_coords = self.patch_coords[idx]
         im_name = current_patch_coords[0]
         limits = current_patch_coords[1]
