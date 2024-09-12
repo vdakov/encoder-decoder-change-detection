@@ -3,25 +3,26 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 
-#==================
-# Script to split some of the datsets into a training, test and validation datasets. Set with the same random seed 
-# for reproducible results. 
-#==================
-
-
+'''
+Script to split some of the datsets into a training, test and validation datasets. Set with the same random seed 
+for reproducible results. The data has been pre-split with this script once and is what the rest of the experiments have been done with.
+'''
 
 def get_args():
+    '''
+    Parser for arguments that can get adjusted for different file structures. 
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_path", type = str, default = os.path.join("..", "data", "HRSCD"))
     parser.add_argument("--base_path", type=str, default = os.path.join("..", "data", "HRSCD"))
     
-    
-    
     return parser.parse_args()
 
-
 def copy_data(classes, images, dataset_path, base_path, set_name):
-
+    '''
+    Function to copy the data to a new directory without - in a way not breaking the old file structure. Does ensurance 
+    as some datasets were inconsitent and did not have all images within all labels. 
+    '''
     for img in images: 
         all_exist = all(os.path.exists(os.path.join(dataset_path, c, img)) for c in classes)
         
@@ -37,6 +38,10 @@ def copy_data(classes, images, dataset_path, base_path, set_name):
 
 
 def create_class_dirs(base_path, class_names):
+    ''' 
+    Function that creates a new directory within the base path. Used for creating the train, test and validation folders. 
+    '''
+    
     for class_name in class_names:
         os.makedirs(os.path.join(base_path, class_name), exist_ok=True)
 

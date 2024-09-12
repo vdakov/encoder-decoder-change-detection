@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
+from distance import calculate_connectedness
+from num_objects import calculate_num_objects
+from sizes import calculate_sizes
+
 '''
 The final evaluation is based on a bunch of hypothesis tests, more specifically non-parametric ones about stochastic dominance. 
 Here I have functionality about plotting probability function, either histograms approximation of the PDFs, KDE approximation or 
@@ -178,6 +182,35 @@ def compare_distributions_cdf(dataset_name, ground_truth, predictions, colors, s
     plt.tight_layout()
     plt.savefig(save_path.split(".")[0] + "_cdf.png")
     plt.show()
+    
+    
+def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, save_path):
+    '''The function that outputs all plots for the statistical comparisons dones in the study. This means 
+    Histograms, EDFs, and KDEs. It aggregates all needed predictions and then outputs the figures in the appropriate folders of the experiment.'''
+    gt_num_changes = calculate_num_objects(ground_truth)
+    gt_spread , _ = calculate_connectedness(ground_truth, {}, scale_for_img=False)
+    gt_sizes , _ = calculate_sizes(ground_truth, {}, scale_for_img=False)
+    
+    predictions_num_changes = {}   
+    for key in predictions_dict.keys():
+        predictions_num_changes[key] = calculate_num_objects(predictions_dict[key])
+    
+    _, predictions_spread = calculate_connectedness([], predictions_dict, scale_for_img=False)
+
+    _, predictions_sizes = calculate_sizes([], predictions_dict, scale_for_img=False)
+    
+    os.makedirs(os.path.join(save_path, 'kdes'), exist_ok=True)
+    os.makedirs(os.path.join(save_path, 'histograms'), exist_ok=True)
+    os.makedirs(os.path.join(save_path, 'cdfs'), exist_ok=True)
+
+        
+    compare_distributions_num_changes(dataset_name, gt_num_changes, predictions_num_changes, colors, save_path, f'{dataset_name}aggregated_dist_num_changes.png')
+    compare_distributions_spread(dataset_name, gt_spread, predictions_spread, colors, save_path, f'{dataset_name}-aggregated_dist_spread.png') 
+    compare_distributions_sizes(dataset_name, gt_sizes, predictions_sizes, colors, save_path, f'{dataset_name}-aggregated_dist_sizes.png')  
+    
+    
+    
+
     
 '''
 --------------------------------------

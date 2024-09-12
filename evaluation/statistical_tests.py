@@ -1,13 +1,17 @@
 import os
 import numpy as np 
 from scipy import stats
-
-from distance import calculate_connectedness, calculate_distances
+from distance import calculate_connectedness
 from statistical_figures import compare_distributions_num_changes, compare_distributions_sizes, compare_distributions_spread
 from num_objects import calculate_num_objects
-from plots import plot_comparison_histogram
 from sizes import calculate_sizes
 
+'''
+The significance of the results of the experiment involve significant amounts of hypothesis testing, all in the interest of checking for 
+stochastic dominance (whether a distribution systematically gets higher values than other). This comes in the form of Kruskal-Wallis (which is both a non-parametric
+version of ANOVA - and thus suitable for our experiment), and Mann-Whitney which check for first-order stochastic dominance and then a direct checking of the 
+second-order stochastic domiance theorem.  
+'''
 
 def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05):
     '''
@@ -16,16 +20,16 @@ def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05)
     indicates that *at least one* sample stochastically dominates the other. 
     The test works on 2 or more independent samples, which may have different sizes. Note that rejecting the null hypothesis does not indicate which of the groups differs. 
     Post hoc comparisons between groups are required to determine which groups are different.
+    
+    Sources: 
+    https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_test
+    *Implementation from SciPy* 
     '''
     rejected = False
     predictions_list = []
     for fusion in predictions.keys():
         if predictions[fusion]:  
             predictions_list.append(predictions[fusion])
-            
-    assert len(predictions_list) >= 2
-    output_dir = os.path.dirname(output_file)
-    assert os.path.exists(output_dir)
     
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')    
@@ -44,9 +48,9 @@ def perform_kruskal_wallis(dataset_name, predictions, output_file, p_val = 0.05)
             
 def perform_kruskal_wallis_and_fosd_per_metric(dataset_name, predictions_num_changes, predictions_spread,  predictions_sizes, save_path, p_val=0.05):
     '''
-    Plain helper function for both Kruskal Wallis and 
+    Plain helper function for both Kruskal Wallis and first-order stochastic dominance. Coupled together as they all test
+    for the same statistical values. 
     '''
-    
     num_changes_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_num_changes, os.path.join(save_path, 'kruskal_wallis_num_changes.txt'), p_val)
     spread_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_spread, os.path.join(save_path, 'kruskal_wallis_spread.txt'), p_val)
     sizes_first_order_sgd = perform_kruskal_wallis(dataset_name, predictions_sizes, os.path.join(save_path, 'kruskal_wallis_size.txt'), p_val)
@@ -67,9 +71,10 @@ def perform_post_hoc_comparison_first_order_sd(dataset_name, metric, predictions
     Sources:
     -https://ocw.mit.edu/courses/14-123-microeconomic-theory-iii-spring-2015/875150f8deb05a910756a02a4f9f78a5_MIT14_123S15_Chap4.pdf
     -https://en.wikipedia.org/wiki/Stochastic_dominance#
+    -https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U_test
+    *Implementation from SciPy* 
     
     '''
-    
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
         keys = list(predictions_dict.keys())
@@ -104,8 +109,6 @@ def perform_post_hoc_comparison_second_order_sd(dataset_name, metric, prediction
     for k in predictions_dict.keys():
         edfs[k] = compute_edf(predictions_dict[k])
         
-    any_dominance = False 
-        
     with open(output_file, 'w') as file:
         file.write(f'Dataset: {dataset_name}\n')
         keys = list(predictions_dict.keys())
@@ -124,6 +127,9 @@ def perform_post_hoc_comparison_second_order_sd(dataset_name, metric, prediction
                 
     
 def compute_edf(data):
+    '''A function that returns the EDF (Empirical Distribution Function), which we use 
+    as a direct approximation of the CDF (Cumilative Distribution Function) - 
+    it converges to the CDF for enough samples '''
     
     sorted_data = np.sort(data)
     cdf_probabilites = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
@@ -131,51 +137,17 @@ def compute_edf(data):
 
 
 def perform_statistical_tests(dataset_name, predictions_dict, experiment_path, p_val=0.05):
-    
-    
+    '''The function that aggregates all needed data and performs all of the above outlines 
+    statistical tests both for first and second order stochastic dominance. 
+    '''
     predictions_num_changes = {}   
     for key in predictions_dict.keys():
-        predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
-    _, predictions_spread = calculate_connectedness(dataset_name, [], predictions_dict, scale_for_img=False)
-    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict, scale_for_img=False)
-    
-    print('Spread', predictions_spread)
-    print('Sizes', predictions_sizes)
+        predictions_num_changes[key] = calculate_num_objects(predictions_dict[key])
+    _, predictions_spread = calculate_connectedness([], predictions_dict, scale_for_img=False)
+    _, predictions_sizes = calculate_sizes([], predictions_dict, scale_for_img=False)
     
     perform_kruskal_wallis_and_fosd_per_metric(dataset_name, predictions_num_changes, predictions_spread, predictions_sizes, experiment_path, p_val)
-    
     
     perform_post_hoc_comparison_second_order_sd(dataset_name, 'num_changes', predictions_num_changes, os.path.join(experiment_path, 'second_order_sd_num_changes.txt'))
     perform_post_hoc_comparison_second_order_sd(dataset_name, 'spread', predictions_spread, os.path.join(experiment_path, 'second_order_sd_spread.txt'))
     perform_post_hoc_comparison_second_order_sd(dataset_name, 'sizes', predictions_sizes, os.path.join(experiment_path, 'second_order_sd_sizes.txt'))
-    
-    
-    
-def aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, colors, save_path):
-    gt_num_changes = calculate_num_objects(dataset_name, ground_truth)
-    gt_spread , _ = calculate_connectedness(dataset_name, ground_truth, {}, scale_for_img=False)
-    gt_sizes , _ = calculate_sizes(dataset_name, ground_truth, {}, scale_for_img=False)
-    
-    predictions_num_changes = {}   
-    for key in predictions_dict.keys():
-        predictions_num_changes[key] = calculate_num_objects(dataset_name, predictions_dict[key])
-    
-    _, predictions_spread = calculate_connectedness(dataset_name, [], predictions_dict, scale_for_img=False)
-
-    _, predictions_sizes = calculate_sizes(dataset_name, [], predictions_dict, scale_for_img=False)
-    
-    os.makedirs(os.path.join(save_path, 'kdes'), exist_ok=True)
-    os.makedirs(os.path.join(save_path, 'histograms'), exist_ok=True)
-    os.makedirs(os.path.join(save_path, 'cdfs'), exist_ok=True)
-
-        
-    compare_distributions_num_changes(dataset_name, gt_num_changes, predictions_num_changes, colors, save_path, f'{dataset_name}aggregated_dist_num_changes.png')
-    compare_distributions_spread(dataset_name, gt_spread, predictions_spread, colors, save_path, f'{dataset_name}-aggregated_dist_spread.png') 
-    compare_distributions_sizes(dataset_name, gt_sizes, predictions_sizes, colors, save_path, f'{dataset_name}-aggregated_dist_sizes.png')  
-    
-    
-    
-
-
-        
-

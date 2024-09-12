@@ -7,8 +7,6 @@ sys.path.insert(1, 'results')
 sys.path.insert(1, 'visualization')
 sys.path.insert(1, 'preprocessing')
 
-
-
 import os
 import torch
 from matplotlib import pyplot as plt
@@ -25,15 +23,13 @@ from metrics import evaluate_net_predictions, get_ground_truth, get_predictions
 from plots import create_loss_accuracy_figures, plot_aggregated_loss
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
-from tables import create_tables, load_metrics, store_mean_difference_per_epoch
+from tables import create_tables, load_metrics
 from train_test import train
 from unet import Unet 
 from late_siam_net import SiamLateFusion
 import argparse
-from statistical_tests import aggregate_distribution_histograms, perform_statistical_tests
-
-
-
+from statistical_tests import perform_statistical_tests
+from statistical_figures import aggregate_distribution_histograms
 
 
 def get_args():
@@ -133,8 +129,6 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
     
     train_set_loader, val_set_loader, test_set_loader = dataset_loaders
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
- 
-    aggregate_categorical = []
     
     n = 4
     arr = plt.cm.viridis(np.linspace(0, 1, n))
@@ -154,16 +148,11 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
             print('Restored weights!')
             state_dict = torch.load(f'{model_path}.pth', weights_only=True)
             net.load_state_dict(state_dict)
-            
             training_metrics, validation_metrics, test_metrics = load_metrics(model_path)
-            
-
         else: 
             os.makedirs(model_path, exist_ok=True)
             training_metrics, validation_metrics = train(net, train_set_loader, val_set_loader, criterion, DEVICE, n_epochs= epochs, save=True, save_dir = f'{model_path}.pth', skip_val = False, early_stopping = True)
             
-
-        
         test_metrics = evaluate_net_predictions(net, criterion, test_set_loader)
         create_tables(training_metrics, validation_metrics, test_metrics, os.path.join(model_path, 'tables'))
         if generate_plots:
@@ -177,7 +166,6 @@ def run_experiment(experiment_name, dataset_name, datasets, dataset_loaders, cri
         
     if generate_plots:
         plot_aggregated_loss(experiment_name, FUSIONS, COLORS)
-        store_mean_difference_per_epoch(aggregate_categorical, EXPERIMENT_PATH)
         perform_statistical_tests(dataset_name, predictions_dict, EXPERIMENT_PATH, p_val=0.05)
         ground_truth = get_ground_truth(test_set)
         aggregate_distribution_histograms(dataset_name, ground_truth, predictions_dict, COLORS, EXPERIMENT_PATH)
@@ -258,14 +246,3 @@ if __name__ == "__main__":
     run_experiment(EXPERIMENT_NAME, DATASET_NAME, [train_dataset, val_dataset, test_dataset], 
                    [train_loader, val_loader, test_loader], criterion, N_EPOCHS,
                    restore_prev=RESTORE_PREV, generate_plots=GENERATE_PLOTS)
-
-    
-
-
-
-
-     
-
-
-
-
