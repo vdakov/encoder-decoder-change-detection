@@ -5,16 +5,15 @@ import os
 import ast
 import json
 
-
-#########
-# Functions exporting all results as .csv and .tex files for easy addition to scientific reports. For a
-# all of them a provided save_path is preferably assumed, and stored per fusion architecture. The tables are per train, 
-# test and validation dataset. 
-#########
+'''
+Functions exporting all results as .csv and .tex files for easy addition to scientific reports. For a
+all of them a provided save_path is preferably assumed, and stored per fusion architecture. The tables are per train, 
+test and validation dataset. 
+'''
 
 def create_tables(train_metrics, val_metrics, test_metrics, save_path=""):
     '''
-    Exports the metrics disctionaries into CSVs. 
+    Exports the metrics disctionaries into CSVs and TeX. 
     '''
     train_frame = pd.DataFrame.from_dict(train_metrics)
     val_frame = pd.DataFrame.from_dict(val_metrics)
@@ -43,42 +42,12 @@ def create_tables(train_metrics, val_metrics, test_metrics, save_path=""):
 
         with open(test_filename_tex, 'w', encoding='utf-8') as f:
             f.write(test_frame.to_latex(index=False))
-            
-
-        
-        
-    
-    
-def store_mean_difference_per_epoch(aggregate_category_metrics, experiment_name):
-    '''
-    Function to calculate the mean differences between the number of changes, estimated by the model, per both fusion architecture (hardcoded)
-    and for each epoch. 
-    
-    '''
-    
-    data = []
-    
-    for model_name, categorical_metrics in zip(["Early", "Mid-Conc.", "Mid-Diff.", "Late"], aggregate_category_metrics):
-        gt = [item[0] for item in categorical_metrics['num_changes']]
-        pred = [item[1] for item in categorical_metrics['num_changes']]
-        data.append([model_name, np.mean(np.abs(np.subtract(gt, pred)))])
-    
-    
-    with open(os.path.join(experiment_name, 'mean_differences.csv'), 'w', newline='') as csv_file:
-        
-        writer = csv.writer(csv_file)
-        writer.writerow(['Model Name', 'Mean Absolute Difference'])  # Write the header
-        writer.writerows(data)
-    
-        
-
 
 def load_metrics(model_path):
     '''
     Function used to reload the training metrics on a trained model. Assumes a given path.
-    Useful if the visualization functions have changed, and the model itself does not need
+    Useful if the visualization functions have changed, and that the model itself does not need
     retraining. 
-    
     '''
     train_filename = os.path.join(model_path, 'tables', 'train_metrics.csv')
     val_filename = os.path.join(model_path, 'tables', 'val_metrics.csv')
@@ -136,16 +105,3 @@ def load_metrics(model_path):
             
             
     return train_list, val_list, test_list
-
-
-
-def load_categorical_metrics(model_path):
-    '''
-    Reloading function for when we have a trained neural network and simply want to reevaluate the model categorically. 
-    Useful if the figures have been reworked or the evaluation.
-    
-    '''
-    with open(os.path.join(model_path,  'tables', 'categorical_metrics.json'), 'r') as f:
-        loaded_data_dict = json.load(f)
-        
-    return loaded_data_dict

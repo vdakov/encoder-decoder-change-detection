@@ -25,6 +25,21 @@ from math import ceil
 class LEVIR_Dataset(Dataset):
     
     def __init__(self, dirname, set_name, FP_MODIFIER, patch_side = 96, transform=None):
+        '''The PyTorch dataloader for the LEVIR dataset. The initialization parameters are as follows: 
+        - dirname: A string containing where the model should draw data from 
+        - set_name: A string specifying set (train, test, val) this data is from (for a naming convention)
+        - FP_Modifier: False positive modifier number. A parameter that scales how many times xN more the dataset should punish false positive exaples 
+        (done here, as the weights for the two classes are calculated based on the distribution of black and white pixels in the dataset)
+        - patch_side: The size of one side of the patch to cut all input images into, via the patch-based method described in the paper. 
+        - transform: A list of all of the data augmentations (data transformations) performed on the dataset during training. They come in the form of 
+        PyTorch callbacks that are implemented in 'data_augmentation.py' 
+        
+        The LEVIR dataset is one of the most popular change detection datasets, introduced in this paper, with a transformer method. Read the 
+        full paper here https://www.mdpi.com/2072-4292/12/10/1662. 
+        
+        The PyTorch dataset creator puts all of these into dictionaries and lists and makes them retrievable via the PyTorch interfaces.
+        The functions are standard PyTorch dataset getters.
+        '''
         self.imgs_1 = {}
         self.imgs_2 = {}
         self.change_maps = {}
@@ -82,23 +97,12 @@ class LEVIR_Dataset(Dataset):
         self.weights = [ FP_MODIFIER * 2 * true_pix / n_pix, 2 * (n_pix - true_pix) / n_pix]
 
     def get_img(self, im_name):
-        return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name], 'placeholder', self.num_changes[im_name]
+        return self.imgs_1[im_name], self.imgs_2[im_name], self.change_maps[im_name], self.num_changes[im_name]
 
     def __len__(self):
         return self.n_patches
 
     def __getitem__(self, idx):
-        # im_name = list(self.imgs_1.keys())[idx]
-        # I1 = self.imgs_1[im_name]
-        # I2 = self.imgs_2[im_name]
-        # label = self.change_maps[im_name]
-        # num_changes = self.num_changes[im_name]
-  
-        
-        # sample = {'I1': I1, 'I2': I2, 'label': label, "num_changes" : num_changes}
-        
-
-        # return sample
         current_patch_coords = self.patch_coords[idx]
         im_name = current_patch_coords[0]
         limits = current_patch_coords[1]

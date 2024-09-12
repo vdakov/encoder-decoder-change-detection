@@ -1,15 +1,18 @@
+import csv
+import os
 from matplotlib import pyplot as plt
 import torch
 from torch.autograd import Variable
 from tqdm import tqdm as tqdm
 import numpy as np
 
-
-
-def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
-    '''A non-categorical evaluation that evaluates the accuracy of a neural network as is. The
-    reason it evaluates the images alone and doesn't collect the predictions as the training loop goes 
-    was a limitation of the training code, where it was hard to evaluate the IOU per batch.'''
+def evaluate_net_predictions(net, criterion, dataset_loader):
+    '''A function that looks at the net loss, and accuracy metrics for a specifc. It evaluates all images per 
+    batch, which is why the IoU and reshaping computations are a bit weirder than they seem. The IOU threshold is fixed in its own function 
+    (as of time of writing =0.5).
+    
+    It is used to monitor how both the loss and accuracy metrics are doing during training.
+    '''
     net.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
@@ -39,21 +42,12 @@ def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
         cm_batch_normalized = (cm_batch - cm_batch_min) / (cm_batch_max - cm_batch_min + 1e-6)
         gt_labels = (cm_batch_normalized > 0.5).long()
         
-        # pr = predicted_labels.view(-1)
-        # gt = gt_labels.view(-1)
-        
         #flatten the batches, but without the actual batch
         pr = predicted_labels.view(predicted_labels.size(0), -1)
         gt = gt_labels.view(gt_labels.size(0), -1)
 
   
         # # Calculate TP, TN, FP, FN for the entire batch
-        # tp += (pr * gt).sum().item()
-        # tn += ((1 - pr) * (1 - gt)).sum().item()
-        # fp += (pr * (1 - gt)).sum().item()
-        # fn += ((1 - pr) * gt).sum().item()
-        
-        # print(pr.shape, gt.shape)
         iou_batch = compute_iou_batch(pr, gt)
         
         tp += iou_batch[0]
@@ -75,8 +69,15 @@ def evaluate_net_predictions(net, criterion, dataset_loader, IOU_THRESHOLD=0.5):
             "f1": f1}
     
 
-
 def compute_iou_batch(predictions, ground_truth, IOU_THRESHOLD=0.5):
+    '''The IoU TP, FP, TN and FN evaluator per image. It receives as input batches, it treats as 
+    entire tensors. 
+    
+    Despite the fact TN is non-traditional in object detection, here the actual task is a bit different. We evaluate 
+    on a pixel level, meaning it is a binary classification task, where this method of classification is fully valid. 
+    
+    The threshold of 0.5 has been selected as industry standard. 
+    '''
 
     intersection = (predictions * ground_truth).sum(dim=1)
     union = predictions.sum(dim=1) + ground_truth.sum(dim=1) - intersection
@@ -88,15 +89,12 @@ def compute_iou_batch(predictions, ground_truth, IOU_THRESHOLD=0.5):
     fp = ((iou < IOU_THRESHOLD) & (intersection > 0)).sum().item()
     tn = ((union == 0) & (intersection == 0)).sum().item()
     fn = ((union > 0) & (intersection == 0)).sum().item()
-
-
-    
     return [tp, fp, tn, fn]
 
-
-
-
 def get_ground_truth(dataset):
+    ''' A getter for the ground truth dataset in-memory. Outputs a normal list
+    '''
+    
     ground_truth = []
     for img_index in dataset.names:
         _, _, cm, _, _ = dataset.get_img(img_index)
@@ -106,9 +104,9 @@ def get_ground_truth(dataset):
                 
     return ground_truth 
 
-
-
 def get_predictions(net, dataset):
+    ''' A getter for the predictions of all architectures in-memory. Outputs a list that is later used in a dictionary.
+    '''
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net.to(device)
     predictions = []
@@ -120,10 +118,14 @@ def get_predictions(net, dataset):
         
         output = net(I1, I2).float().to(device)
 
-
         predicted = np.exp(np.squeeze(output.cpu().detach().numpy())[1])
         predicted = np.where(predicted < 0.5, 0, 1)
 
         predictions.append(predicted)
                 
     return predictions 
+
+
+
+
+

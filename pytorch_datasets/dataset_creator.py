@@ -19,9 +19,35 @@ from evaluation.distance import calculate_distances
 from evaluation.num_objects import calculate_num_objects
 from evaluation.sizes import calculate_sizes
 
+'''The CSCD Creation Procedure - where all synthetic images for CSCD are created. 
 
+
+A brief overview of the procedure: 
+
+1. Analysis of the LEVIR-CD dataset, to extract its distributions in building area, 
+number of buildings, and distance between buildings (inter-connectednes). Conversion of Euclidean distance 
+into radiuses around a building for a later algorithm.
+2. Specification of the sizes of the desired training, validation and test datasets, as well as image size.
+3. Image creation starts. 
+
+Every image is created as such:
+    - radius, number of buildings and average image area are sampled, along with the variances of the 
+    distribution 
+    - an empty image of the desired size is created 
+    - the image is populated with the sampled number of buildings via the labels of the changes, and following a modified version of the Poisson disk sampling
+    algorithm, where samples are distributed in a radius of varying size around a grid - this gives coordinates of centroids at which buildings will 
+    be; the buildings' area are within a range of the fixed sampled area and one standard deviation; the images are rotated at a random angle 
+        - This creates the first image T1 
+    - this is repeated for the image T2 
+    - the change label is the XOR between the two images 
+    - The two images T1 and T2 are mapped to two random colors for their foreground and background and 
+    adjusted via a small distortion to their brightness and Gaussian blur. 
+    - T1, T2 and their label area created. 
+    
+'''
 
 def give_random_colors():
+    '''The function that returns two different foreground and background colors out of the entire RGB pallete.'''
     
     color1 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     color2 = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
@@ -33,15 +59,13 @@ def give_random_colors():
     return color1, color2
 
 def adjust_brightness(image, factor):
+    '''Does the color mutation between T1 and T2 - the most suitable way found was via an HSV brightness adjustment. Mean to add more invariance to the dataset.'''
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     hsv[:, :, 2] = np.clip(hsv[:, :, 2] * factor, 0, 255)
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
-
-
-
-
 def create_base_image(width, height, num_buildings, area, std_area, radius, std_radius):
+    '''The base image (or T1) creation function. Based on the samples it is given, it creates a completely new building-imitating image via the Poisson Sampling algorithm.'''
     img = np.zeros((width, height, 3), np.uint8)
     points = poisson_disk_sampling(img, num_buildings, radius, std_radius)
     base_obj_width, base_obj_height = np.sqrt(area), np.sqrt(area)
@@ -49,7 +73,7 @@ def create_base_image(width, height, num_buildings, area, std_area, radius, std_
     for point in points:
 
         
-        obj_width, obj_height = randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area))), randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area)))
+        obj_width, obj_height = randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area))), randint(int(base_obj_height - np.sqrt(std_area)), int(base_obj_height + np.sqrt(std_area)))
         
         angle = randint(0, 360)
         x0, y0 = point
@@ -61,31 +85,19 @@ def create_base_image(width, height, num_buildings, area, std_area, radius, std_
         cv2.polylines(img, [box] ,True,(255,255,255))
         cv2.fillPoly(img, [box], (255, 255, 255))
 
-
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
-        # img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-        # img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
-
     t1 = img.astype(np.uint8)
     
     return t1, points
 
-
-
-
-
-
-
 def change(t1, num_changes, area, std_area, radius, std_radius, active_points):
+    '''The function that adds all necessary changes to T1. It differs from the T1 function with the 
+    fact that Poisson Sampling is passed the old active points, and that here the first image is not modified.'''
 
     img = np.zeros(t1.shape)
-    
     points = poisson_disk_sampling(img, num_changes, radius, std_radius, active_points)
     base_obj_width, base_obj_height = np.sqrt(area), np.sqrt(area)
     
     for point in points:
-
-        
         obj_width, obj_height = randint(int(base_obj_width - np.sqrt(std_area)), int(base_obj_width + np.sqrt(std_area))), randint(int(base_obj_height - np.sqrt(std_area)), int(base_obj_height + np.sqrt(std_area)))
         angle = randint(0, 360)
         x0, y0 = point
@@ -97,23 +109,16 @@ def change(t1, num_changes, area, std_area, radius, std_radius, active_points):
         cv2.polylines(img, [box] ,True,(255,255,255))
         cv2.fillPoly(img, [box], (255, 255, 255))
 
-
-        # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE , (5, 5))
-        # img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-        # img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
-        
     t2 = np.logical_or(t1, img)
     t2 = t2.astype(np.uint8) * 255
 
     label = np.logical_xor(t1, t2).astype(np.uint8) * 255
-
-
     label = cv2.cvtColor(label, cv2.COLOR_BGR2GRAY)
         
-    
     return  t2, label
 
 def recolor_img(img, bg_color, building_color):
+    '''The function that maps the black and white image's foreground and background to specifically chosen colors.'''
     black_pixels = np.where(
         (img[:, :, 0] == 0) & 
         (img[:, :, 1] == 0) & 
@@ -130,19 +135,8 @@ def recolor_img(img, bg_color, building_color):
     
     return img
 
-base_imgs = []
-time_1_imgs = []
-time_2_imgs = []
-labels = []
-situation_label = []
-
-
-
-
-
-#assumes equal density between every building in image 
 def calculate_radius(n, density, beta = 0.05 ):
-    return np.divide(np.log(np.divide(n, density)), beta)
+    return np.divide(np.log(np.divide(n, density)), beta) #assumes equal density between every building in image 
 
 def sample_dataset_properties(numbers, densities, sizes):
     std_num_buildings = np.std(numbers)
@@ -159,15 +153,12 @@ def poisson_disk_sampling(img, num_buildings, radius, std_radius, active_points=
     '''
     Algorithm borrowed from https://sighack.com/post/poisson-disk-sampling-bridsons-algorithm. 
     It samples building a radius, equal to the density of the sampled image. The result should be approximately an image with that density. This radius should be 
-    one standard deviation from the given density.
+    one standard deviation from the given density. The algorithm is slightly modifed, as we limit the number of buldings generated, vary the radius between the points in the 
+    grid directly (instead of just being [r, 2r]). Otherwise the algorithms are identical. 
     '''
     points = [] 
     N = 2
     width, height = img.shape[:2]
-    
-    # radius = randint(20, 40)
-    
-    
     cellsize = max(math.floor(radius / np.sqrt(N)), 1)
     ncells_width = math.ceil(width / cellsize) + 1
     ncells_height = math.ceil(height / cellsize) + 1
@@ -205,14 +196,11 @@ def poisson_disk_sampling(img, num_buildings, radius, std_radius, active_points=
 
         return True
 
-    
     x0, y0 = random.randrange(0, width), random.randrange(height)
     insert_point(grid, (x0, y0))
     points.append((x0, y0))
     active_points.append((x0, y0))
 
-    
-    
     while len(points) < num_buildings and len(active_points) > 0:
         random_index = random.randrange(0, len(active_points))
         p = active_points[random_index]
@@ -242,21 +230,26 @@ def poisson_disk_sampling(img, num_buildings, radius, std_radius, active_points=
             
         if not found:
             del active_points[random_index]
-            
-            
-            
-    
+
     return points
 
     
 
 
-
+'''================================================CREATION STARTS HERE================================================'''
+base_imgs = []
+time_1_imgs = []
+time_2_imgs = []
+labels = []
+situation_label = []
 
 
 gt_images = [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'train', 'label'))] 
 gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'test', 'label'))] 
 gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label', img), cv2.IMREAD_GRAYSCALE) for img in os.listdir(os.path.join('..', 'data', 'LEVIR-CD', 'val', 'label'))] 
+
+
+'''The three functions below ensure that the dataset properties are saved and not re-calculated on every reboot of the script.'''
 
 def save_properties(numbers, radiuses, sizes, filename='dataset_properties.pkl'):
     with open(filename, 'wb') as f:
@@ -309,7 +302,6 @@ for set in sets.keys():
     os.makedirs(t1_dir, exist_ok=True)
     os.makedirs(t2_dir, exist_ok=True)
     os.makedirs(label_dir, exist_ok=True)
-    csv_data = []
     
     j = 0
 
@@ -330,41 +322,33 @@ for set in sets.keys():
         time_1 = cv2.blur(time_1,(5,5))
         time_2 = cv2.blur(time_2,(5,5))
         
-        cv2.imshow('Time 1', time_1)
-        cv2.imshow('Time 2', time_2)
-        cv2.imshow('Label', label)
+        
+        #UNCOMMENT IF YOU WANT TO VISUALIZE
+        
+        # cv2.imshow('Time 1', time_1)
+        # cv2.imshow('Time 2', time_2)
+        # cv2.imshow('Label', label)
         
         # Move windows to avoid overlap (positioning them side by side)
-        cv2.moveWindow('Time 1', 100, 100)  # Move 'Time 1' window to (100, 100)
-        cv2.moveWindow('Time 2', 300, 100)  # Move 'Time 2' window to (300, 100)
-        cv2.moveWindow('Label', 500, 100)   # Move 'Label' window to (500, 100)
+        # cv2.moveWindow('Time 1', 100, 100)  # Move 'Time 1' window to (100, 100)
+        # cv2.moveWindow('Time 2', 300, 100)  # Move 'Time 2' window to (300, 100)
+        # cv2.moveWindow('Label', 500, 100)   # Move 'Label' window to (500, 100)
         
         # Wait for a key press and move to the next set of images
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
         
-        # Close the display windows to prepare for the next images
-        cv2.destroyAllWindows()
+        # # Close the display windows to prepare for the next images
+        # cv2.destroyAllWindows()
         
 
         
         im_name = f'{set}-{j}.png'
-        # cv2.imwrite(os.path.join(t1_dir, im_name), time_1) 
-        # cv2.imwrite(os.path.join(t2_dir, im_name), time_2) 
-        # cv2.imwrite(os.path.join(label_dir, im_name), label) 
-        csv_data.append([im_name, 'none', num_changes])
+        # COMMENT OUT IF YOU DO NOT WANT TO OVERWRITE OLD IMAGES 
+        cv2.imwrite(os.path.join(t1_dir, im_name), time_1) 
+        cv2.imwrite(os.path.join(t2_dir, im_name), time_2) 
+        cv2.imwrite(os.path.join(label_dir, im_name), label) 
         
-    
-
-
-
-
-    csv_path = os.path.join(set_path, 'situation_labels.csv')
-    with open(csv_path, mode='w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(['im_name', 'situation', 'num_changes'])
-        csv_writer.writerows(csv_data)
-
-
+# Zips all data together. 
 cscd_dir = os.path.join('..', 'data', 'CSCD')
 zip_filename = os.path.join('..', 'data', 'CSCD')
 shutil.make_archive(base_name=zip_filename, format='zip', root_dir=cscd_dir)
