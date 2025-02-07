@@ -61,7 +61,8 @@ class CSCD_Dataset(Dataset):
  
 
         names = set(os.listdir(os.path.join(dirname,set_name, "A"))) & set(os.listdir(os.path.join(dirname,set_name, "B"))) & set(os.listdir(os.path.join(dirname,set_name, "label"))) 
-
+        print(names)
+        
 
         for name in names:
             img_name = set_name + "-" + name

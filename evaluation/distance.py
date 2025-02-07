@@ -40,7 +40,6 @@ def calculate_distances(ground_truth, predictions, scale_for_img=True):
             cy1 = M1['m01'] / M1['m00']
         
             distances_point = []
-            area = cv2.contourArea(cnt)
             for cnt2 in contours:
                 if cnt is cnt2:
                     continue
@@ -50,7 +49,7 @@ def calculate_distances(ground_truth, predictions, scale_for_img=True):
                 
                 cx2 = int(M2['m10']/M2['m00'])
                 cy2 = int(M2['m01']/M2['m00'])
-                d = calculate_distance_two_points(cx1, cy1, cx2, cy2, area) / img_area
+                d = calculate_distance_two_points(cx1, cy1, cx2, cy2) / img_area
                 distances_point.append(d)
             
             distances_point = np.array(distances_point)
@@ -171,7 +170,7 @@ def calculate_connectedness(ground_truth, predictions, scale_for_img=True):
                 
                 cx2 = int(M2['m10']/M2['m00'])
                 cy2 = int(M2['m01']/M2['m00'])
-                d = calculate_connectedness_two_points(cx1, cy1, cx2, cy2, area)
+                d = calculate_connectedness_two_points(cx1, cy1, cx2, cy2)
                 distances_point.append(d)
             
             distances_point = np.array(distances_point)

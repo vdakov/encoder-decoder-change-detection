@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-def get_number_of_objects(img):
+def get_number_of_objects(img, min_area=50):
     '''
     The function that measures the number of changes is measured via contour analysis, 
     and then counting the number of contours in terms of ground truth vs. predictions. 
@@ -24,8 +24,9 @@ def get_number_of_objects(img):
     kernel = np.ones((3, 3), np.uint8)
     cleaned_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel, iterations=2)
     contours, _ = cv2.findContours(cleaned_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
 
-    return len(contours)
+    return min(len(filtered_contours), 15)
 
 
 

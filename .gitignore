@@ -2,6 +2,9 @@
 siamese_fcn/__pycache__
 util/__pycache__
 siamese_fcn/__pycache__
+synthetic_data_creation/Splited
+synthetic_data_creation/textures
+synthetic_data_creation/__pycache__
 */__pycache__
 __pycache__
 .vscode

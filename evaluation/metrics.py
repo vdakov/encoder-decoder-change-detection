@@ -97,7 +97,7 @@ def get_ground_truth(dataset):
     
     ground_truth = []
     for img_index in dataset.names:
-        _, _, cm, _, _ = dataset.get_img(img_index)
+        _, _, cm, _= dataset.get_img(img_index)
         cm = np.zeros_like(cm) if np.max(cm) == np.min(cm) else (cm - np.min(cm)) / (np.max(cm) - np.min(cm))
         cm = np.where(cm < 0.5, 0, 1)
         ground_truth.append(cm)
@@ -112,7 +112,7 @@ def get_predictions(net, dataset):
     predictions = []
     
     for img_index in dataset.names:
-        I1, I2, _, _, _ = dataset.get_img(img_index)
+        I1, I2, _, _= dataset.get_img(img_index)
         I1 = Variable(torch.unsqueeze(I1, 0).float().to(device))
         I2 = Variable(torch.unsqueeze(I2, 0).float().to(device))
         

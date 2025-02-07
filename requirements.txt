@@ -12,5 +12,4 @@ tqdm
 torchviz
 pillow
 rasterio
-gdal
 seaborn
