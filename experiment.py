@@ -25,6 +25,7 @@ from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
 from unet_small_ef import Small_UNet_EF
 from unet_small_middle import SiamUNet_Middle_Small
+from late_siam_small import Small_UNet_Late
 from tables import create_tables, load_metrics
 from train_test import train
 from unet import Unet 
@@ -70,7 +71,9 @@ def get_args():
     return parser.parse_args()
 
 
-FUSIONS = ["Early", "Middle-Conc", "Middle-Diff", "Late"]  # Constant hardcoded names of the four fusion architectures tested 
+# FUSIONS = ["Early", "Middle-Conc", "Middle-Diff", "Late"]  # Constant hardcoded names of the four fusion architectures tested 
+FUSIONS = ["Early", "Middle-Conc", "Late"]
+# FUSIONS = ["Late"]
 
 def initialize_model(fusion, experiment_name):
     """
@@ -82,11 +85,11 @@ def initialize_model(fusion, experiment_name):
     elif fusion == "Middle-Conc":
         net = SiamUNet_Middle_Small(3, 2)
         net_name = f'Middle-Conc-{experiment_name}'
-    elif fusion == "Middle-Diff":
-        net = SiamUnet_diff(3, 2)
-        net_name = f'Middle-Diff-{experiment_name}'
+    # elif fusion == "Middle-Diff":
+    #     net = SiamUnet_diff(3, 2)
+    #     net_name = f'Middle-Diff-{experiment_name}'
     elif fusion == "Late":
-        net = SiamLateFusion(3, 2)
+        net = Small_UNet_Late(6, 2)
         net_name = f'Late-{experiment_name}'
     else:
         raise ValueError(f"Unknown fusion type: {fusion}")

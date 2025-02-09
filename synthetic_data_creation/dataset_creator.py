@@ -71,9 +71,9 @@ gt_images = gt_images + [cv2.imread(os.path.join('..', 'data', 'LEVIR-CD', 'val'
 
 numbers, radiuses, sizes = read_dataset_properties(gt_images)
 
-sets = {'train' : 256, 'test' : 256, 'val': 24}
-width = 256
-height = 256
+sets = {'train' : 2048, 'test' : 512, 'val': 512}
+width = 128
+height = 128
 area = width * height
 sizes = np.multiply(sizes, np.ones(len(sizes)) * area)
 radiuses = np.multiply(radiuses, np.ones(len(radiuses)) * area)
