@@ -23,6 +23,8 @@ from metrics import evaluate_net_predictions, get_ground_truth, get_predictions
 from plots import create_loss_accuracy_figures, plot_aggregated_loss
 from siamunet_conc import SiamUnet_conc
 from siamunet_diff import SiamUnet_diff
+from unet_small_ef import Small_UNet_EF
+from unet_small_middle import SiamUNet_Middle_Small
 from tables import create_tables, load_metrics
 from train_test import train
 from unet import Unet 
@@ -75,10 +77,10 @@ def initialize_model(fusion, experiment_name):
     Initialize the model based on the fusion type.
     """
     if fusion == "Early":
-        net = Unet(6, 2)
+        net = Small_UNet_EF(6, 2)
         net_name = f'Early-{experiment_name}'
     elif fusion == "Middle-Conc":
-        net = SiamUnet_conc(3, 2)
+        net = SiamUNet_Middle_Small(3, 2)
         net_name = f'Middle-Conc-{experiment_name}'
     elif fusion == "Middle-Diff":
         net = SiamUnet_diff(3, 2)

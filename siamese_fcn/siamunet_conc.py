@@ -160,7 +160,7 @@ class SiamUnet_conc(nn.Module):
         x3d = torch.cat((pad3(x3d), x33_1, x33_2), 1)
         x33d = self.do33d(F.relu(self.bn33d(self.conv33d(x3d))))
         x32d = self.do32d(F.relu(self.bn32d(self.conv32d(x33d))))
-        x31d = self.do31d(F.relu(self.bn31d(self.conv31d(x32d))))
+        x31d = self.do31d(F.relu(self.bn31d(self.conv31d(                     x32d))))
 
         # Stage 2d
         x2d = self.upconv2(x31d)

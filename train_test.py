@@ -20,24 +20,28 @@ def train(net, train_loader, val_loader, criterion, device, n_epochs = 10, save 
     
     Training is performed in batches using PyTorch's dataloaders. 
     '''
-    optimizer = torch.optim.Adam(net.parameters(), weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
-    
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+
     train_metrics = []
     val_metrics = []
     
     patience = 10
     best_loss = float('inf')
     best_model_weights = copy.deepcopy(net.state_dict())
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net.to(device)  # Move model to GPU
+
     
     for epoch in range(n_epochs):
         net.train()
         
         with tqdm(total=len(train_loader), desc=f'Epoch {epoch+1}/{n_epochs}', unit='batch') as pbar:
             for batch in train_loader:
-                I1 = Variable(batch['I1'].float().to(device))
-                I2 = Variable(batch['I2'].float().to(device))
-                label = Variable(batch['label'].long().to(device))
+                I1 = Variable(batch['I1'].float()).to(device)
+                I2 = Variable(batch['I2'].float()).to(device)
+                label = Variable(batch['label'].long()).to(device)
         
                 optimizer.zero_grad()
 
